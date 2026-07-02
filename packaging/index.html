@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PACKAGING GRID — CHICAGO METRO</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#040b09">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23040b09'/%3E%3Ccircle cx='8' cy='8' r='5' fill='none' stroke='%2334d399' stroke-width='1.2'/%3E%3Ccircle cx='8' cy='8' r='1.6' fill='%2334d399'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#040b09; --bg2:#06120e; --panel:#071511; --line:#0e2a20;
+  --grid:#0a1f18; --green:#34d399; --green-dim:#168f63; --green-glow:rgba(52,211,153,.45);
+  --amber:#ffb340; --amber-dim:#8f6520; --red:#ff4d5e; --cyan:#4dc8ff; --cyan-dim:#1d4f6e; --dim:#3e6b58;
+  --txt:#c2e8d6; --txt-dim:#5d8a76; --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mono);font-size:13px;overflow:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);opacity:.5}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:radial-gradient(ellipse at 50% 40%,transparent 55%,rgba(0,0,0,.55) 100%)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:stretch;border-bottom:1px solid var(--line);background:var(--bg2);height:64px}
+.brand{display:flex;flex-direction:column;justify-content:center;padding:0 22px;border-right:1px solid var(--line);min-width:240px}
+.brand h1{font-size:15px;letter-spacing:.22em;color:var(--green);text-shadow:0 0 12px var(--green-glow);white-space:nowrap}
+.brand small{color:var(--txt-dim);letter-spacing:.18em;font-size:9px;margin-top:3px}
+nav{display:flex;border-right:1px solid var(--line)}
+nav button{background:none;border:none;border-right:1px solid var(--line);color:var(--txt-dim);
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;padding:0 26px;cursor:pointer;position:relative;transition:color .2s}
+nav button:hover{color:var(--txt)}
+nav button.on{color:var(--green);text-shadow:0 0 10px var(--green-glow)}
+nav button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--green);box-shadow:0 0 8px var(--green-glow)}
+.kpis{display:flex;flex:1}
+.kpi{display:flex;flex-direction:column;justify-content:center;padding:0 22px;border-right:1px solid var(--line)}
+.kpi label{font-size:9px;letter-spacing:.2em;color:var(--txt-dim)}
+.kpi .v{font-size:19px;color:var(--green);text-shadow:0 0 10px var(--green-glow);margin-top:2px;font-weight:600}
+.kpi .v.amber{color:var(--amber);text-shadow:0 0 10px rgba(255,179,64,.4)}
+.cycle{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:0 22px;margin-left:auto}
+.cycle label{font-size:9px;letter-spacing:.2em;color:var(--txt-dim)}
+.cycle .clock{font-size:17px;color:var(--txt)}
+.resweep{background:none;border:1px solid var(--green-dim);color:var(--green);font-family:var(--mono);
+  font-size:9px;letter-spacing:.2em;padding:4px 12px;margin-top:4px;cursor:pointer;transition:all .2s}
+.resweep:hover{background:var(--green);color:#000;box-shadow:0 0 16px var(--green-glow)}
+
+/* ---------- layout ---------- */
+main{display:flex;height:calc(100% - 64px)}
+.view{display:none;width:100%;height:100%}
+.view.on{display:flex}
+
+/* ---------- war map ---------- */
+#mapwrap{flex:1;position:relative;overflow:hidden;background:
+  radial-gradient(circle at 50% 45%,#07181266 0%,transparent 70%),var(--bg)}
+#mapsvg{width:100%;height:100%;display:block}
+.gridline{stroke:var(--grid);stroke-width:1}
+.sector{fill:rgba(20,80,60,.10);stroke:#12422c;stroke-width:1;transition:fill .25s;cursor:crosshair}
+.sector:hover{fill:rgba(52,211,153,.14);stroke:var(--green-dim)}
+.sector.hot{fill:rgba(52,211,153,.07);stroke:#1d6b48}
+.sector-label{fill:#2c5a47;font-size:9px;font-family:var(--mono);letter-spacing:.08em;pointer-events:none}
+.pin{cursor:pointer}
+.pin circle.core{transition:r .15s}
+.pin.PRIORITY circle.core{fill:var(--green);filter:drop-shadow(0 0 6px var(--green-glow))}
+.pin.ACTIVE circle.core{fill:var(--amber);filter:drop-shadow(0 0 5px rgba(255,179,64,.5))}
+.pin.WATCH circle.core{fill:#2e6b51;filter:drop-shadow(0 0 3px rgba(52,211,153,.25))}
+.pin circle.ring{fill:none;stroke-width:1;opacity:0}
+.pin.PRIORITY circle.ring{stroke:var(--green)}
+.pin.ACTIVE circle.ring{stroke:var(--amber)}
+.pin.WATCH circle.ring{stroke:#2e6b51}
+.pin.blip circle.ring{animation:ringout 1s ease-out}
+.pin.sel circle.core{r:7;stroke:#fff;stroke-width:1}
+.pin text{fill:var(--txt-dim);font-size:8px;font-family:var(--mono);letter-spacing:.1em;pointer-events:none}
+.pin.PRIORITY text{fill:var(--green)}
+@keyframes ringout{0%{opacity:.9;r:5}100%{opacity:0;r:26}}
+#sweepwedge{transform-origin:var(--cx) var(--cy);animation:sweep 7.5s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.maphud{position:absolute;font-size:9px;letter-spacing:.18em;color:var(--txt-dim);pointer-events:none}
+.maphud b{color:var(--green);font-weight:400}
+#hud-tl{top:14px;left:18px}
+#hud-bl{bottom:14px;left:18px}
+#hud-br{bottom:14px;right:18px;text-align:right}
+.tierfilter{position:absolute;top:14px;right:18px;display:flex;gap:6px}
+.tierfilter button{background:rgba(4,11,9,.8);border:1px solid var(--line);color:var(--txt-dim);
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;padding:5px 10px;cursor:pointer}
+.tierfilter button.on{color:var(--green);border-color:var(--green-dim)}
+.tierfilter button.on.t-A{color:var(--amber);border-color:var(--amber-dim)}
+.tierfilter button.on.t-W{color:var(--dim);border-color:var(--dim)}
+#tooltip{position:absolute;background:rgba(4,12,9,.95);border:1px solid var(--line);padding:7px 10px;
+  font-size:10px;pointer-events:none;display:none;z-index:50;letter-spacing:.05em}
+#tooltip b{color:var(--green)}
+
+/* ---------- drop feed / dossier card ---------- */
+#sidebar{width:340px;border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;position:relative}
+.sidehead{padding:13px 16px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.25em;color:var(--green);
+  text-shadow:0 0 8px var(--green-glow);display:flex;justify-content:space-between;align-items:center}
+.sidehead .live{color:var(--red);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+#feed{flex:1;overflow-y:auto;padding:6px 0}
+.drop{padding:9px 16px;border-bottom:1px solid #0a1c14;animation:dropin .4s ease-out}
+@keyframes dropin{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+.drop .t1{display:flex;justify-content:space-between;font-size:11px}
+.drop .t1 b{color:var(--txt);font-weight:600;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drop .t1 span{color:var(--green);font-size:9px;letter-spacing:.06em;white-space:nowrap}
+.drop .t2{display:flex;justify-content:space-between;font-size:9px;color:var(--txt-dim);margin-top:3px;letter-spacing:.08em}
+
+#card{position:absolute;inset:0;background:var(--bg2);display:none;flex-direction:column;z-index:5}
+#card.on{display:flex}
+.cardhead{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.cardhead .cs{font-size:13px;letter-spacing:.2em;color:var(--green);text-shadow:0 0 8px var(--green-glow)}
+.cardhead button{background:none;border:1px solid var(--line);color:var(--txt-dim);font-family:var(--mono);
+  padding:3px 9px;cursor:pointer;font-size:10px}
+.cardbody{flex:1;overflow-y:auto;padding:16px}
+.badges{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+.badge{font-size:8px;letter-spacing:.15em;padding:3px 8px;border:1px solid var(--line);color:var(--txt-dim)}
+.badge.g{color:var(--green);border-color:var(--green-dim)}
+.badge.a{color:var(--amber);border-color:var(--amber-dim)}
+.badge.r{color:var(--red);border-color:#6b2229}
+.badge.c{color:var(--cyan);border-color:var(--cyan-dim)}
+.badge.new{color:var(--cyan);border-color:var(--cyan-dim);text-shadow:0 0 8px rgba(77,200,255,.35)}
+.badge.foam{color:#b6ffe0;border-color:var(--green-dim);background:rgba(52,211,153,.10);text-shadow:0 0 8px var(--green-glow)}
+.cardco{font-size:16px;color:#fff;font-weight:600;line-height:1.3}
+.bigval{font-size:26px;color:var(--green);text-shadow:0 0 14px var(--green-glow);margin:8px 0 2px;font-weight:600}
+.bigval small{font-size:9px;color:var(--txt-dim);letter-spacing:.15em;display:block;margin-top:2px}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #0a1c14;font-size:11px}
+.kv label{color:var(--txt-dim);letter-spacing:.1em;font-size:9px}
+.kv span{color:var(--txt);text-align:right;max-width:190px}
+.kv span.phone{color:var(--green);font-size:13px}
+.whybox{margin:14px 0;padding:11px 12px;border:1px solid var(--green-dim);background:rgba(52,211,153,.04)}
+.whybox label{font-size:9px;letter-spacing:.22em;color:var(--green)}
+.whybox p{margin-top:6px;font-size:11px;line-height:1.55;color:var(--txt)}
+.openfull{display:block;width:100%;background:var(--green);border:none;color:#021;font-family:var(--mono);
+  font-size:11px;letter-spacing:.25em;padding:13px;cursor:pointer;font-weight:700;margin-top:14px;
+  box-shadow:0 0 18px var(--green-glow);transition:filter .15s}
+.openfull:hover{filter:brightness(1.15)}
+
+/* ---------- score bars ---------- */
+.scorebig{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.scorebig .n{font-size:30px;color:var(--green);text-shadow:0 0 12px var(--green-glow);font-weight:700}
+.scorebig .d{color:var(--txt-dim);font-size:11px}
+.sub{margin:7px 0}
+.sub .lbl{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.15em;color:var(--txt-dim);margin-bottom:4px}
+.sub .lbl b{color:var(--txt);font-weight:400}
+.bar{height:5px;background:#0a1f18;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0;right:auto;background:linear-gradient(90deg,var(--green-dim),var(--green));
+  box-shadow:0 0 8px var(--green-glow);width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.bar.amber i{background:linear-gradient(90deg,var(--amber-dim),var(--amber));box-shadow:0 0 8px rgba(255,179,64,.4)}
+
+/* ---------- overlays (dossier / report) ---------- */
+.overlay{position:fixed;inset:0;background:rgba(2,7,5,.92);backdrop-filter:blur(3px);z-index:100;display:none;overflow-y:auto}
+.overlay.on{display:block}
+.sheet{max-width:1060px;margin:30px auto;background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 0 60px rgba(0,0,0,.7),0 0 30px rgba(52,211,153,.05);animation:sheetin .35s ease-out}
+@keyframes sheetin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.sheethead{display:flex;justify-content:space-between;align-items:center;padding:18px 26px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--panel);z-index:5}
+.sheethead .l .cs{font-size:18px;letter-spacing:.25em;color:var(--green);text-shadow:0 0 12px var(--green-glow)}
+.sheethead .l .co{font-size:12px;color:var(--txt-dim);margin-top:4px;letter-spacing:.08em}
+.sheethead .r{display:flex;gap:8px;align-items:center}
+.ghostbtn{background:none;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);
+  font-size:10px;letter-spacing:.18em;padding:9px 16px;cursor:pointer;transition:all .15s}
+.ghostbtn:hover{border-color:var(--green-dim);color:var(--green)}
+.ghostbtn.solid{background:var(--green);color:#021;border-color:var(--green);font-weight:700;box-shadow:0 0 14px var(--green-glow)}
+.sheetgrid{display:grid;grid-template-columns:1fr 360px;gap:0}
+.sheetmain{padding:22px 26px;border-right:1px solid var(--line)}
+.sheetside{padding:22px 22px}
+.sec{margin-bottom:24px}
+.sec h3{font-size:10px;letter-spacing:.25em;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.sec h3 .tag{color:var(--txt-dim);letter-spacing:.1em}
+.verbatim{border:1px solid var(--line);background:#050f0b;padding:13px 15px;font-size:11px;line-height:1.7;color:var(--txt)}
+.verbatim .row{display:flex;gap:10px;padding:2px 0}
+.verbatim .row label{color:var(--txt-dim);min-width:96px;font-size:9px;letter-spacing:.12em;padding-top:2px}
+.whynow{border-left:3px solid var(--green);padding:10px 14px;background:rgba(52,211,153,.04);font-size:12px;line-height:1.6}
+.intel{font-size:11px}
+.intel .ln{display:flex;gap:12px;padding:5px 0;border-bottom:1px dashed #0a1f16;opacity:0;animation:lnin .3s forwards}
+.intel .ln .t{color:var(--green-dim);min-width:44px}
+@keyframes lnin{to{opacity:1}}
+.vtrail{font-size:11px}
+.vtrail .ln{display:flex;gap:10px;padding:4px 0}
+.vtrail .s-ok{color:var(--green)}
+.vtrail .s-pend{color:var(--amber);animation:pulse 1.6s infinite}
+.minimap{border:1px solid var(--line);background:#04100a;margin-top:6px}
+.srcs{font-size:10px;color:var(--txt-dim);line-height:1.9;letter-spacing:.05em}
+.srcs li{list-style:none}
+.srcs li::before{content:"▸ ";color:var(--green-dim)}
+.weightline{display:flex;gap:6px;font-size:9px;letter-spacing:.14em;color:var(--txt-dim);margin-bottom:12px}
+.weightline b{color:var(--green);font-weight:400}
+.evid{border:1px solid var(--line);margin-bottom:12px}
+.evid .eh{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;background:#05100c}
+.evid .eh .nm{font-size:10px;letter-spacing:.2em;color:var(--txt)}
+.evid .eh .sc{font-size:14px;color:var(--green);font-weight:700}
+.evid ul{padding:9px 13px}
+.evid li{list-style:none;font-size:11px;line-height:1.7;color:var(--txt)}
+.evid li::before{content:"+ ";color:var(--green-dim)}
+.draftpre{white-space:pre-wrap;border:1px solid var(--line);background:#050f0b;padding:16px;font-size:11.5px;line-height:1.7;color:var(--txt)}
+.draftnote{font-size:9px;color:var(--amber);letter-spacing:.12em;margin-top:9px}
+
+/* ---------- pipeline view ---------- */
+#view-pipe{flex-direction:column;overflow:hidden}
+.pipewrap{flex:1;overflow-y:auto;padding:0 26px 26px}
+table.pipe{width:100%;border-collapse:collapse;margin-top:14px}
+table.pipe th{font-size:9px;letter-spacing:.22em;color:var(--txt-dim);text-align:left;padding:10px 12px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+table.pipe td{padding:9px 12px;border-bottom:1px solid #0a1c14;font-size:11px;cursor:pointer}
+table.pipe tr:hover td{background:rgba(52,211,153,.04)}
+td.cs{color:var(--green);letter-spacing:.12em;white-space:nowrap}
+td.biz{color:#fff;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.val{color:var(--green)}
+.minibar{display:inline-block;width:70px;height:4px;background:#0a1f18;vertical-align:middle;margin-left:8px;position:relative}
+.minibar i{position:absolute;inset:0;right:auto;background:var(--green)}
+.chip{font-size:8px;letter-spacing:.18em;padding:3px 9px;border:1px solid}
+.chip.DRAFTED{color:#ff9e3d;border-color:#7a4a16}
+.chip.REVIEW{color:#ffd23d;border-color:#7a6516}
+.chip.DOSSIER{color:var(--green);border-color:var(--green-dim)}
+.chip.WATCH{color:var(--dim);border-color:#1d3a2f}
+.chip.CONTACTED{color:var(--cyan);border-color:var(--cyan-dim)}
+.chip.RESPONDED{color:#ffd23d;border-color:#7a6516}
+.chip.ACCOUNT{color:var(--green);border-color:var(--green-dim);background:rgba(52,211,153,.08)}
+.chip.PASS{color:var(--dim);border-color:#1d3a2f;text-decoration:line-through}
+.chip.NONE{color:var(--txt-dim);border-color:var(--line)}
+.chip.st0{color:var(--amber);border-color:var(--amber-dim)}
+.chip.st1{color:var(--cyan);border-color:var(--cyan-dim)}
+.chip.st2{color:var(--green);border-color:var(--green-dim)}
+.opchip{cursor:pointer;user-select:none;transition:all .15s}
+.opchip:hover{border-color:var(--green-dim);box-shadow:0 0 8px rgba(52,211,153,.2)}
+td.ev{color:var(--txt-dim);font-size:10px;letter-spacing:.05em}
+.viewtitle{padding:20px 26px 0;font-size:10px;letter-spacing:.3em;color:var(--green);text-shadow:0 0 8px var(--green-glow)}
+.viewtitle small{display:block;margin-top:5px;color:var(--txt-dim);letter-spacing:.12em;font-size:9px}
+
+/* ---------- system view ---------- */
+#view-sys{flex-direction:column;overflow:hidden}
+.syswrap{flex:1;display:flex;overflow:hidden}
+.topo{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:30px;gap:0}
+.tier-row{display:flex;gap:34px;align-items:center}
+.node{border:1px solid var(--line);background:#05100b;padding:13px 18px;min-width:172px;text-align:center;position:relative}
+.node .nm{font-size:10px;letter-spacing:.2em;color:var(--txt)}
+.node .ct{font-size:19px;color:var(--green);text-shadow:0 0 10px var(--green-glow);margin-top:5px;font-weight:600}
+.node .sub2{font-size:8px;color:var(--txt-dim);letter-spacing:.12em;margin-top:3px}
+.node.online{border-color:var(--green-dim)}
+.node.online::before{content:"●";color:var(--green);font-size:8px;position:absolute;top:7px;right:9px;animation:pulse 1.6s infinite}
+.conn{width:1px;height:26px;background:linear-gradient(180deg,var(--green-dim),var(--line));position:relative}
+.conn::after{content:"";position:absolute;left:-2px;width:5px;height:5px;background:var(--green);border-radius:50%;
+  animation:flow 1.8s linear infinite;box-shadow:0 0 6px var(--green-glow)}
+@keyframes flow{from{top:-4px;opacity:1}to{top:100%;opacity:.2}}
+.pills{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+.pill{font-size:9px;letter-spacing:.18em;padding:6px 13px;border:1px solid var(--green-dim);color:var(--green)}
+.pill.q{border-color:var(--amber-dim);color:var(--amber)}
+#opslog{width:380px;border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column}
+#opsfeed{flex:1;overflow-y:auto;padding:8px 0;font-size:10px}
+.ops{padding:6px 16px;color:var(--txt-dim);border-bottom:1px solid #081710;animation:dropin .3s ease-out;letter-spacing:.04em}
+.ops .t{color:var(--green-dim);margin-right:9px}
+.ops.hi{color:var(--txt)}
+.statline{display:flex;border-top:1px solid var(--line)}
+.statline .st{flex:1;padding:11px 16px;border-right:1px solid var(--line)}
+.statline .st label{font-size:8px;letter-spacing:.18em;color:var(--txt-dim);display:block}
+.statline .st b{font-size:14px;color:var(--green);font-weight:600}
+
+/* ---------- boot ---------- */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;align-items:flex-start;justify-content:center;
+  flex-direction:column;gap:4px;font-size:12px;letter-spacing:.15em;color:var(--green);cursor:pointer;transition:opacity .4s;
+  padding-left:calc(50vw - 320px)}
+#boot.off{opacity:0;pointer-events:none}
+#boot .bl{opacity:0;animation:lnin .2s forwards}
+#boot .cursor{display:inline-block;width:8px;height:14px;background:var(--green);animation:pulse .8s infinite;vertical-align:text-bottom}
+@media(max-width:1100px){.sheetgrid{grid-template-columns:1fr}.sheetmain{border-right:none}}
+
+/* ---------- mobile ≤900px — ADDITIVE ONLY, desktop untouched ---------- */
+@media(max-width:900px){
+  body{display:flex;flex-direction:column}
+  /* header re-stacks: brand+cycle row, KPI chip strip, nav moves to bottom bar */
+  header{height:auto;flex-wrap:wrap;padding-top:env(safe-area-inset-top)}
+  .brand{order:1;flex:1 1 auto;min-width:0;border-right:none;padding:10px 14px}
+  .brand h1{font-size:12px;letter-spacing:.14em;white-space:normal;line-height:1.4}
+  .brand small{font-size:8px}
+  .cycle{order:2;padding:8px 14px;margin-left:0}
+  .cycle .clock{font-size:14px}
+  .resweep{padding:9px 11px;min-height:34px}
+  .kpis{order:3;flex:1 1 100%;overflow-x:auto;border-top:1px solid var(--line);
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .kpis::-webkit-scrollbar{display:none}
+  .kpi{flex:0 0 auto;padding:9px 14px;white-space:nowrap;justify-content:center}
+  .kpi .v{font-size:15px;margin-top:1px}
+  nav{order:4;position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;
+    background:var(--bg2);border-top:1px solid var(--line);border-right:none;
+    padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1;height:54px;padding:0 4px;font-size:10px;letter-spacing:.14em}
+  nav button:last-child{border-right:none}
+  nav button.on::after{bottom:auto;top:0}
+  main{flex:1;height:auto;min-height:0;padding-bottom:calc(54px + env(safe-area-inset-bottom))}
+  /* war map stacks: short map panel, feed below */
+  #view-map{flex-direction:column}
+  #mapwrap{flex:0 0 38vh;min-height:230px;width:100%}
+  .maphud{font-size:8px}
+  #hud-bl{display:none}
+  .tierfilter{top:10px;right:10px;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:62%}
+  .tierfilter button{padding:8px 8px}
+  #sidebar{width:100%;flex:1;min-height:0;border-left:none;border-top:1px solid var(--line)}
+  /* target card = full-screen sheet */
+  #card{position:fixed;inset:0;z-index:95;padding-top:env(safe-area-inset-top)}
+  .cardhead button{padding:12px 18px;font-size:12px;min-height:44px}
+  .cardbody{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .openfull{padding:16px;min-height:48px}
+  /* pipeline = primary surface */
+  .viewtitle{padding:14px 14px 0}
+  .pipewrap{padding:0 10px 18px}
+  table.pipe{table-layout:fixed}
+  table.pipe th:nth-child(1){width:78px}
+  table.pipe th:nth-child(5){width:44px}
+  table.pipe th:nth-child(7){width:84px}
+  table.pipe th:nth-child(3),table.pipe td:nth-child(3),
+  table.pipe th:nth-child(4),table.pipe td:nth-child(4),
+  table.pipe th:nth-child(6),table.pipe td:nth-child(6),
+  table.pipe th:nth-child(8),table.pipe td:nth-child(8){display:none}
+  table.pipe th{padding:10px 7px}
+  table.pipe td{padding:14px 7px;font-size:12px}
+  td.cs{white-space:normal;font-size:9px;line-height:1.5}
+  td.biz{max-width:0;white-space:normal;line-height:1.45;font-size:11px}
+  .minibar{display:none}
+  .opchip{display:inline-block;padding:11px 6px;min-width:70px;text-align:center}
+  /* system view stacks */
+  .syswrap{flex-direction:column;overflow-y:auto}
+  .topo{padding:18px 10px;flex:none;justify-content:flex-start}
+  .tier-row{flex-wrap:wrap;gap:10px;justify-content:center}
+  .node{min-width:142px;padding:10px 12px}
+  #opslog{width:100%;border-left:none;border-top:1px solid var(--line);min-height:300px;flex:none}
+  /* overlays = full-screen sheets */
+  .sheet{margin:0;max-width:none!important;min-height:100%;border-left:none;border-right:none;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  .sheethead{flex-wrap:wrap;gap:10px;padding:14px;padding-top:calc(14px + env(safe-area-inset-top))}
+  .sheethead .r{flex-wrap:wrap;gap:8px}
+  .ghostbtn{padding:12px 14px;min-height:44px}
+  .sheetmain{padding:16px 14px}
+  .sheetside{padding:16px 14px}
+  /* big fixed thumb-reachable close buttons (existing ids, style only) */
+  #d-close,#r-close,#x-close{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));
+    z-index:300;background:var(--panel);border:1px solid var(--green-dim);color:var(--green);
+    padding:15px 26px;min-height:50px;font-size:12px;letter-spacing:.2em;
+    box-shadow:0 0 22px rgba(0,0,0,.7),0 0 12px rgba(52,211,153,.12)}
+  #copydraft{min-height:50px}
+  .draftnote{padding-right:150px;line-height:1.7}
+  /* boot */
+  #boot{padding:18px;font-size:10px;letter-spacing:.1em}
+}
+</style>
+</head>
+<body>
+
+<div id="boot"></div>
+
+<header>
+  <div class="brand"><h1>PACKAGING GRID <span style="color:var(--txt-dim)">//</span> CHICAGO METRO</h1><small id="brand-sub">NEW FOOD-BUSINESS RADAR · LIVE CITY + STATE RECORDS</small></div>
+  <nav>
+    <button data-v="map" class="on">PACKAGING GRID</button>
+    <button data-v="map" id="nav-fu">FOLLOW-UPS</button>
+    <button data-v="pipe">PIPELINE</button>
+    <button data-v="sys">SYSTEM</button>
+  </nav>
+  <div class="kpis">
+    <div class="kpi"><label>NEW ACCOUNT WINDOW</label><div class="v" id="k-table">0</div></div>
+    <div class="kpi"><label>OPENING IMMINENT</label><div class="v" id="k-immi">0</div></div>
+    <div class="kpi"><label>PINS DROPPED</label><div class="v" id="k-pins">0</div></div>
+    <div class="kpi" id="kpi-foam"><label>FOAM FLAGS</label><div class="v" id="k-foam">0</div></div>
+    <div class="kpi"><label>PRIORITY TGTS</label><div class="v amber" id="k-pri">0</div></div>
+  </div>
+  <div class="cycle">
+    <label>CYCLE</label>
+    <div class="clock" id="clock">03:00</div>
+    <div style="display:flex;gap:6px">
+      <button class="resweep" id="resweep">RE-SWEEP ⟳</button>
+      <button class="resweep" id="exportcsv">EXPORT CSV ⇩</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- WAR MAP -->
+  <div class="view on" id="view-map">
+    <div id="mapwrap">
+      <svg id="mapsvg" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="maphud" id="hud-tl">GRID <b id="hud-region">CHICAGO METRO</b> · SRC <b>CHI DATA + ILCC</b></div>
+      <div class="maphud" id="hud-bl">SWEEP <b>ACTIVE</b> · MODE <b>NIGHT OPS</b></div>
+      <div class="maphud" id="hud-br">GEN <b id="hud-gen">—</b></div>
+      <div class="tierfilter">
+        <button class="on t-P" data-t="PRIORITY">◉ 81+ PRIORITY</button>
+        <button class="on t-A" data-t="ACTIVE">◉ 74–80 ACTIVE</button>
+        <button class="on t-W" data-t="WATCH">◉ WATCH</button>
+      </div>
+      <div id="tooltip"></div>
+    </div>
+    <div id="sidebar">
+      <div class="sidehead"><span>DROP FEED</span><span class="live">● LIVE</span></div>
+      <div id="feed"></div>
+      <div id="card">
+        <div class="cardhead"><span class="cs" id="c-cs">TGT-01 TALON</span><button id="c-close">ESC ✕</button></div>
+        <div class="cardbody">
+          <div class="cardco" id="c-co"></div>
+          <div class="badges" id="c-badges"></div>
+          <div class="bigval" id="c-val">—<small>FACILITY · PUBLIC RECORD</small></div>
+          <div class="scorebig"><span class="n" id="c-score">0</span><span class="d">/ 100 COMPOSITE</span></div>
+          <div class="kv"><label>PHONE</label><span class="phone" id="c-phone"></span></div>
+          <div class="kv"><label>SECTOR</label><span id="c-sector"></span></div>
+          <div class="kv"><label>RECORD</label><span id="c-permit"></span></div>
+          <div class="kv"><label>SIGNAL DATE</label><span id="c-issued"></span></div>
+          <div class="whybox"><label>WHY CALL</label><p id="c-why"></p></div>
+          <button class="openfull" id="c-open">OPEN FULL DOSSIER →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="view" id="view-pipe">
+    <div class="viewtitle">PIPELINE — TARGET BOARD<small id="pipe-sub"></small></div>
+    <div class="pipewrap">
+      <table class="pipe">
+        <thead><tr><th>CALLSIGN</th><th>BUSINESS</th><th>SECTOR</th><th>STAGE</th><th>SCORE</th><th>STATUS</th><th>OPERATOR</th><th>LAST EVENT</th></tr></thead>
+        <tbody id="pipebody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SYSTEM -->
+  <div class="view" id="view-sys">
+    <div class="viewtitle">MACHINE — LEAD FACTORY TOPOLOGY<small>AUTONOMOUS RECON → DOSSIER ASSEMBLY · DRAFTS ONLY, OPERATOR SENDS</small></div>
+    <div class="syswrap">
+      <div class="topo">
+        <div class="tier-row">
+          <div class="node online"><div class="nm">RECON · CHI LICENSES</div><div class="ct" id="n-permits">0</div><div class="sub2">SOCRATA r5kz-chrr · ISSUE ROWS</div></div>
+          <div class="node online"><div class="nm">RECON · INSPECTIONS</div><div class="ct" id="n-insp">0</div><div class="sub2">SOCRATA 4ijn-s7e5 · PRE-OPENING</div></div>
+          <div class="node online"><div class="nm">RECON · PERMITS</div><div class="ct" id="n-bperm">0</div><div class="sub2">SOCRATA ydr8-5enu · BUILD-OUTS</div></div>
+          <div class="node online"><div class="nm">RECON · ILCC</div><div class="ct" id="n-ilcc">0</div><div class="sub2">STATE CSV · METRO + PHONES</div></div>
+        </div>
+        <div class="conn"></div>
+        <div class="node online"><div class="nm">PARSE + CROSS-STAGE DEDUPE</div><div class="ct" id="n-parse">0</div><div class="sub2">DISTINCT FOOD BUSINESSES</div></div>
+        <div class="conn"></div>
+        <div class="node online"><div class="nm">ENRICH</div><div class="ct" id="n-enrich">0</div><div class="sub2">PHONES ON STATE RECORD</div></div>
+        <div class="conn"></div>
+        <div class="node online"><div class="nm">SCORE</div><div class="ct" id="n-score">0</div><div class="sub2">FIT 30 · NEED 25 · REACH 25 · FRESH 20</div></div>
+        <div class="conn"></div>
+        <div class="tier-row">
+          <div class="node online"><div class="nm">DOSSIER</div><div class="ct" id="n-dossier">0</div><div class="sub2">TARGET PACKETS</div></div>
+          <div class="node"><div class="nm">OUTREACH</div><div class="ct" id="n-outreach">0</div><div class="sub2">DRAFTS · AWAITING OPERATOR</div></div>
+        </div>
+        <div class="pills" id="pills"></div>
+      </div>
+      <div id="opslog">
+        <div class="sidehead"><span>OPS LOG</span><span class="live">● STREAM</span></div>
+        <div id="opsfeed"></div>
+        <div class="statline">
+          <div class="st"><label>EVENTS</label><b id="s-events">0</b></div>
+          <div class="st"><label>THROUGHPUT</label><b id="s-thru">0/m</b></div>
+          <div class="st"><label>UPTIME</label><b id="s-up">00:00</b></div>
+          <div class="st"><label>SOURCES</label><b>4/4</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- FULL DOSSIER -->
+<div class="overlay" id="ov-dossier">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="l"><div class="cs" id="d-cs"></div><div class="co" id="d-co"></div></div>
+      <div class="r">
+        <button class="ghostbtn" id="d-status">STATUS · —</button>
+        <button class="ghostbtn" id="d-report">FULL RESEARCH REPORT</button>
+        <button class="ghostbtn" id="d-draft">OUTREACH DRAFT</button>
+        <button class="ghostbtn" id="d-close">CLOSE ✕</button>
+      </div>
+    </div>
+    <div class="sheetgrid">
+      <div class="sheetmain">
+        <div class="sec"><h3>BUSINESS INTEL <span class="tag">— VERBATIM RECORD</span></h3><div class="verbatim" id="d-verbatim"></div></div>
+        <div class="sec"><h3>WHY CALL NOW</h3><div class="whynow" id="d-why"></div></div>
+        <div class="sec"><h3>INTEL LOG <span class="tag">— LIVE</span></h3><div class="intel" id="d-intel"></div></div>
+      </div>
+      <div class="sheetside">
+        <div class="sec">
+          <h3>COMPOSITE SCORE</h3>
+          <div class="scorebig"><span class="n" id="d-score">0</span><span class="d">/ 100 · <span id="d-tier"></span></span></div>
+          <div id="d-subs"></div>
+        </div>
+        <div class="sec"><h3>FACILITY</h3>
+          <div class="bigval" id="d-val">—<small>FACILITY · PUBLIC RECORD</small></div></div>
+        <div class="sec"><h3>CONTACT</h3><div id="d-contact"></div></div>
+        <div class="sec"><h3>POSITION</h3><svg class="minimap" id="d-minimap" width="100%" height="160"></svg></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESEARCH REPORT -->
+<div class="overlay" id="ov-report">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="l"><div class="cs" id="r-cs"></div><div class="co">FULL RESEARCH REPORT · AUTO-ASSEMBLED FROM PUBLIC RECORD</div></div>
+      <div class="r"><button class="ghostbtn solid" id="r-engage">ENGAGE → DRAFT</button><button class="ghostbtn" id="r-close">CLOSE ✕</button></div>
+    </div>
+    <div style="padding:22px 26px">
+      <div class="weightline">WEIGHTS <b>FIT 30</b> · <b>NEED 25</b> · <b>REACH 25</b> · <b>FRESH 20</b></div>
+      <div id="r-sections"></div>
+      <div class="sec"><h3>VERIFICATION TRAIL</h3><div class="vtrail" id="r-vtrail"></div></div>
+      <div class="sec"><h3>SOURCES</h3><ul class="srcs" id="r-srcs"></ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTREACH DRAFT -->
+<div class="overlay" id="ov-draft">
+  <div class="sheet" style="max-width:720px">
+    <div class="sheethead">
+      <div class="l"><div class="cs" id="x-cs"></div><div class="co">OUTREACH DRAFT · NOT SENT — OPERATOR REVIEWS &amp; FIRES</div></div>
+      <div class="r"><button class="ghostbtn solid" id="copydraft">COPY DRAFT</button><button class="ghostbtn" id="x-close">CLOSE ✕</button></div>
+    </div>
+    <div style="padding:22px 26px">
+      <div class="draftpre" id="x-body"></div>
+      <div class="draftnote">⚠ [JUSTIN / UNITED PACKAGING] = YOUR SIGN-OFF BLOCK. NOTHING SENDS WITHOUT A HUMAN.</div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.WARMAP;
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* ---------- stage presentation ---------- */
+const STAGE_CHIP = {0:'st0',1:'st1',2:'st2'};
+const STAGE_BADGE = {0:'a',1:'c',2:'g'};      // BUILD-OUT amber · IMMINENT cyan · OPEN green
+
+/* ---------- operator status (persists in localStorage across re-sweeps;
+   keyed by source-prefixed record id so a target keeps its status when the
+   board re-bakes) ------------------------------------------------------- */
+const STATUS_KEY = 'upkStatus';
+const STATUSES = ['', 'CONTACTED', 'RESPONDED', 'ACCOUNT', 'PASS'];
+let opStatus = {};
+try { opStatus = JSON.parse(localStorage.getItem(STATUS_KEY)) || {}; } catch(e) {}
+const skey = t => (t.source_kind && t.permit_no) ? t.source_kind+':'+t.permit_no : t.company;
+const getStatus = t => opStatus[skey(t)] || '';
+function cycleStatus(t){
+  const next = STATUSES[(STATUSES.indexOf(getStatus(t)) + 1) % STATUSES.length];
+  if(next) opStatus[skey(t)] = next; else delete opStatus[skey(t)];
+  try { localStorage.setItem(STATUS_KEY, JSON.stringify(opStatus)); } catch(e) {}
+  return next;
+}
+
+/* ---------- projection ---------- */
+const B = D.bounds, W = 980, H = 760, PAD = 36;
+const cosLat = Math.cos((B.south+B.north)/2*Math.PI/180);
+const spanX = (B.east-B.west)*cosLat, spanY = B.north-B.south;
+const scale = Math.min((W-2*PAD)/spanX, (H-2*PAD)/spanY);
+const offX = (W - spanX*scale)/2, offY = (H - spanY*scale)/2;
+const px = lng => offX + (lng-B.west)*cosLat*scale;
+const py = lat => offY + (B.north-lat)*scale;
+
+/* ---------- build the map ---------- */
+const svg = $('#mapsvg');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t,a={}) => { const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
+
+// grid lines
+const gGrid = el('g'); svg.appendChild(gGrid);
+for(let x=0;x<=W;x+=49) gGrid.appendChild(el('line',{x1:x,y1:0,x2:x,y2:H,class:'gridline'}));
+for(let y=0;y<=H;y+=49) gGrid.appendChild(el('line',{x1:0,y1:y,x2:W,y2:y,class:'gridline'}));
+
+// sectors
+const gSec = el('g'); svg.appendChild(gSec);
+const secStats = {};
+D.sectors.forEach(s => {
+  secStats[s.zip] = s;
+  const pts = s.ring.map(p=>`${px(p[0]).toFixed(1)},${py(p[1]).toFixed(1)}`).join(' ');
+  const poly = el('polygon',{points:pts,class:'sector'+(s.permits>=8?' hot':'')});
+  poly.dataset.zip = s.zip;
+  gSec.appendChild(poly);
+  // centroid label for busy sectors
+  if(s.permits >= 10){
+    const cx = s.ring.reduce((a,p)=>a+px(p[0]),0)/s.ring.length;
+    const cy = s.ring.reduce((a,p)=>a+py(p[1]),0)/s.ring.length;
+    const t = el('text',{x:cx,y:cy,class:'sector-label','text-anchor':'middle'});
+    t.textContent = s.zip; gSec.appendChild(t);
+  }
+});
+
+// radar sweep
+const cx = W/2, cy = H/2;
+document.documentElement.style.setProperty('--cx', cx+'px');
+document.documentElement.style.setProperty('--cy', cy+'px');
+const defs = el('defs');
+defs.innerHTML = `<linearGradient id="swp" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="rgba(52,211,153,0)"/><stop offset="1" stop-color="rgba(52,211,153,.16)"/></linearGradient>`;
+svg.appendChild(defs);
+const R = Math.hypot(W,H)/2 + 40;
+const wedge = el('path',{id:'sweepwedge', d:`M ${cx} ${cy} L ${cx+R} ${cy} A ${R} ${R} 0 0 0 ${cx+R*Math.cos(-0.62)} ${cy+R*Math.sin(-0.62)} Z`, fill:'url(#swp)'});
+svg.appendChild(wedge);
+svg.appendChild(el('circle',{cx,cy,r:R*.32,fill:'none',stroke:'#0d2c20','stroke-width':1}));
+svg.appendChild(el('circle',{cx,cy,r:R*.55,fill:'none',stroke:'#0d2c20','stroke-width':1}));
+
+// pins
+const gPins = el('g'); svg.appendChild(gPins);
+const pinAngles = [];
+D.targets.forEach((t,i) => {
+  if(t.lat == null){
+    // no coords: place at its sector centroid if we have it, else skip pin
+    const s = secStats[t.sector];
+    if(!s) return;
+    t._x = s.ring.reduce((a,p)=>a+px(p[0]),0)/s.ring.length;
+    t._y = s.ring.reduce((a,p)=>a+py(p[1]),0)/s.ring.length;
+  } else { t._x = px(t.lng); t._y = py(t.lat); }
+  const g = el('g',{class:`pin ${t.tier}`,transform:`translate(${t._x.toFixed(1)},${t._y.toFixed(1)})`});
+  g.dataset.i = i;
+  g.appendChild(el('circle',{class:'ring',r:5}));
+  g.appendChild(el('circle',{class:'core',r:t.tier==='PRIORITY'?5.5:4.5}));
+  if(t.tier==='PRIORITY'){
+    const lb = el('text',{x:9,y:3}); lb.textContent = t.id; g.appendChild(lb);
+  }
+  gPins.appendChild(g);
+  pinAngles.push({g, ang:(Math.atan2(t._y-cy, t._x-cx)*180/Math.PI+360)%360});
+});
+
+// sweep-synced blips
+let sweepStart = performance.now();
+(function blipLoop(now){
+  const ang = (((now-sweepStart)/7500)%1)*360;
+  pinAngles.forEach(p=>{
+    let d = Math.abs(ang-p.ang); d = Math.min(d,360-d);
+    if(d < 3 && !p.g.classList.contains('blip')){
+      p.g.classList.add('blip');
+      setTimeout(()=>p.g.classList.remove('blip'),1100);
+    }
+  });
+  requestAnimationFrame(blipLoop);
+})(performance.now());
+
+/* ---------- tooltip on sectors ---------- */
+const tip = $('#tooltip');
+gSec.addEventListener('mousemove', e=>{
+  const z = e.target.dataset && e.target.dataset.zip;
+  if(!z){ tip.style.display='none'; return; }
+  const s = secStats[z];
+  tip.innerHTML = `<b>SECTOR ${z}</b><br>${s.permits} lead${s.permits===1?'':'s'} · all stages`;
+  tip.style.display='block';
+  const r = $('#mapwrap').getBoundingClientRect();
+  tip.style.left = (e.clientX-r.left+14)+'px';
+  tip.style.top = (e.clientY-r.top+10)+'px';
+});
+gSec.addEventListener('mouseleave', ()=> tip.style.display='none');
+
+/* ---------- KPIs (count-up) ---------- */
+function countUp(elx, target, fmt, ms=1400){
+  const t0 = performance.now();
+  (function tick(now){
+    const k = Math.min(1,(now-t0)/ms), e = 1-Math.pow(1-k,3);
+    elx.textContent = fmt(Math.round(target*e));
+    if(k<1) requestAnimationFrame(tick);
+  })(t0);
+}
+function fireKpis(){
+  countUp($('#k-table'), D.kpis.new_accounts, v=>v.toLocaleString('en-US'), 1800);
+  countUp($('#k-immi'), D.kpis.imminent, v=>v);
+  countUp($('#k-pins'), D.kpis.pins, v=>v);
+  if(D.kpis.foam_flags != null)
+    countUp($('#k-foam'), D.kpis.foam_flags, v=>v.toLocaleString('en-US'), 1800);
+  else $('#kpi-foam').style.display = 'none';    // honest: no data, no KPI
+  countUp($('#k-pri'), D.kpis.priority_count, v=>v);
+}
+$('#hud-gen').textContent = (D.generated_at||'').slice(0,16).replace('T',' ')+'Z';
+$('#hud-region').textContent = D.kpis.region_mode || D.county.toUpperCase();
+
+/* ---------- EXPORT CSV — client-side, includes live operator statuses ----- */
+$('#exportcsv').onclick = ()=>{
+  const cols = ['callsign','tier','score','name','stage','facility','foam_flag',
+    'issued','days_ago','phone','contact','address','city','county','zip',
+    'record_no','source','new_this_sweep','operator_status','why_call'];
+  const esc = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const lines = [cols.join(',')].concat(D.targets.map(t => [
+    `${t.id} ${t.callsign}`, t.tier, t.score, t.company, t.stage_label||'',
+    t.klass||'', t.foam?'FOAM':'', t.issued||'', t.days_ago ?? '', t.phone||'',
+    t.contact_name||'', t.address||'', t.city||'', t.county||'', t.zip||'',
+    t.permit_no||'', t.source_kind||'', t.is_new?'NEW':'',
+    getStatus(t), t.why_call||''
+  ].map(esc).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
+  a.download = 'united_packaging_call_sheet.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ---------- drop feed ---------- */
+const feedEl = $('#feed');
+let feedIdx = 0, eventsCount = 0;
+function pushDrop(initial){
+  const f = D.feed[feedIdx % D.feed.length]; feedIdx++;
+  const d = document.createElement('div'); d.className='drop';
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0'), mm = String(now.getMinutes()).padStart(2,'0'),
+        ss = String(now.getSeconds()).padStart(2,'0');
+  d.innerHTML = `<div class="t1"><b>${f.company}</b><span>${f.label||'—'}</span></div>
+    <div class="t2"><span>SECTOR ${f.sector} · ${f.kind.toUpperCase()}</span><span>${hh}:${mm}:${ss}</span></div>`;
+  feedEl.prepend(d);
+  while(feedEl.children.length > 28) feedEl.lastChild.remove();
+  eventsCount++;
+}
+for(let i=0;i<14;i++) pushDrop(true);
+setInterval(pushDrop, 4200);
+
+/* ---------- views ---------- */
+$$('nav button').forEach(b => b.onclick = ()=>{
+  $$('nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('on'));
+  $('#view-'+b.dataset.v).classList.add('on');
+});
+
+/* ---------- tier filter ---------- */
+$$('.tierfilter button').forEach(b=> b.onclick = ()=>{
+  b.classList.toggle('on');
+  const show = new Set($$('.tierfilter button.on').map(x=>x.dataset.t));
+  $$('.pin').forEach(p=>{
+    const t = D.targets[+p.dataset.i];
+    p.style.display = show.has(t.tier) ? '' : 'none';
+  });
+});
+
+/* ---------- target card ---------- */
+let curT = null;
+gPins.addEventListener('click', e=>{
+  const g = e.target.closest('.pin'); if(!g) return;
+  $$('.pin.sel').forEach(p=>p.classList.remove('sel')); g.classList.add('sel');
+  openCard(D.targets[+g.dataset.i]);
+});
+function openCard(t){
+  curT = t;
+  $('#c-cs').textContent = `${t.id} ${t.callsign}`;
+  $('#c-co').textContent = t.company;
+  const badges = [`<span class="badge ${t.tier==='PRIORITY'?'g':t.tier==='ACTIVE'?'a':''}">${t.tier}</span>`,
+    `<span class="badge ${STAGE_BADGE[t.stage]}">${t.stage_label}</span>`,
+    t.phone?`<span class="badge g">LINE VERIFIED</span>`:`<span class="badge r">WALK-IN ROUTE</span>`];
+  if(t.foam) badges.push(`<span class="badge foam">FOAM EXPOSURE</span>`);
+  if((t.stages_seen||[]).length>1) badges.push(`<span class="badge a">${t.stages_seen.length} STAGES TRACKED</span>`);
+  if(t.is_new) badges.push(`<span class="badge new">NEW THIS SWEEP</span>`);
+  const st = getStatus(t);
+  if(st) badges.push(`<span class="badge ${st==='ACCOUNT'?'g':st==='PASS'?'':'a'}">OP · ${st}</span>`);
+  $('#c-badges').innerHTML = badges.join('');
+  $('#c-val').innerHTML = (t.value_label||'—') +
+    `<small>${({license:'CHICAGO LICENSE · CITY RECORD',ilcc:'ILCC LICENSE · STATE RECORD',inspection:'PRE-OPENING INSPECTION · CITY RECORD',permit:'BUILD-OUT PERMIT · CITY RECORD'})[t.source_kind]||'PUBLIC RECORD'}</small>`;
+  $('#c-score').textContent = t.score;
+  $('#c-phone').textContent = t.phone || 'NO LINE ON RECORD';
+  $('#c-phone').style.color = t.phone ? '' : 'var(--amber)';
+  $('#c-sector').textContent = t.sector;
+  $('#c-permit').textContent = t.permit_no || '—';
+  $('#c-issued').textContent = t.issued ? `${t.issued} · ${t.days_ago}d ago` : '—';
+  $('#c-why').textContent = t.why_call;
+  $('#card').classList.add('on');
+}
+$('#c-close').onclick = ()=>{ $('#card').classList.remove('on'); $$('.pin.sel').forEach(p=>p.classList.remove('sel')); };
+$('#c-open').onclick = ()=> openDossier(curT);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){
+  $$('.overlay.on').forEach(o=>o.classList.remove('on'));
+  $('#card').classList.remove('on');
+}});
+
+/* ---------- full dossier ---------- */
+const SUBNAMES = {icp:'FACILITY FIT',pain:'ACCOUNT NEED',reach:'REACHABILITY',fresh:'FRESHNESS'};
+function openDossier(t){
+  curT = t;
+  $('#d-cs').textContent = `${t.id} ${t.callsign}`;
+  $('#d-co').textContent = `${t.company} · SECTOR ${t.sector} · ${t.source.toUpperCase()}`;
+  const rows = [
+    ['RECORD', t.permit_no || '—'],
+    ['STAGE', `${t.stage_label}${(t.stages_seen||[]).length>1?' · tracked: '+t.stages_seen.join(' → '):''}`],
+    ['FACILITY', `${t.klass || '—'} · ${t.work || ''}`],
+    ['STATUS', t.status || '—'],
+    ['SIGNAL DATE', t.issued ? `${t.issued} (${t.days_ago} days ago)` : '—'],
+    ['ADDRESS', t.address || '—'],
+    ['COUNTY', t.county || '—'],
+  ];
+  if(t.activity) rows.push(['ACTIVITY', t.activity.slice(0,160)]);
+  if(t.legal_name && t.legal_name !== t.company) rows.push(['LEGAL NAME', t.legal_name]);
+  if(t.foam) rows.push(['FOAM FLAG', t.foam]);
+  $('#d-verbatim').innerHTML = rows.map(r=>`<div class="row"><label>${r[0]}</label><div>${r[1]}</div></div>`).join('');
+  paintStatusBtn(t);
+  $('#d-why').textContent = t.why_call;
+  // intel log types in
+  const il = $('#d-intel'); il.innerHTML='';
+  t.intel_log.forEach((l,i)=>{
+    const d = document.createElement('div'); d.className='ln'; d.style.animationDelay = (i*.28)+'s';
+    d.innerHTML = `<span class="t">${l.t}</span><span>${l.msg}</span>`;
+    il.appendChild(d);
+  });
+  $('#d-score').textContent = t.score;
+  $('#d-tier').textContent = t.tier;
+  const subs = $('#d-subs'); subs.innerHTML='';
+  Object.entries(t.subscores).forEach(([k,v])=>{
+    const d = document.createElement('div'); d.className='sub';
+    d.innerHTML = `<div class="lbl"><span>${SUBNAMES[k]} · ${Math.round(D.weights[k])}%</span><b>${v}</b></div>
+      <div class="bar${v<60?' amber':''}"><i></i></div>`;
+    subs.appendChild(d);
+    requestAnimationFrame(()=>requestAnimationFrame(()=> d.querySelector('i').style.width = v+'%'));
+  });
+  $('#d-val').innerHTML = (t.value_label||'—') +
+    `<small>${({license:'CHICAGO LICENSE · CITY RECORD',ilcc:'ILCC LICENSE · STATE RECORD',inspection:'PRE-OPENING INSPECTION · CITY RECORD',permit:'BUILD-OUT PERMIT · CITY RECORD'})[t.source_kind]||'PUBLIC RECORD'}</small>`;
+  const c = [];
+  c.push(`<div class="kv"><label>PHONE</label><span class="phone">${t.phone||'NO LINE ON RECORD'}</span></div>`);
+  if(t.contact_name) c.push(`<div class="kv"><label>NAME ON FILE</label><span>${t.contact_name}</span></div>`);
+  if(t.owners) c.push(`<div class="kv"><label>PRINCIPALS</label><span>${t.owners.slice(0,80)}</span></div>`);
+  if(t.phone_source) c.push(`<div class="kv"><label>VERIFIED VIA</label><span>${t.phone_source}</span></div>`);
+  c.push(`<div class="kv"><label>ADDRESS</label><span>${t.address||'—'}${t.city?', '+t.city:''}</span></div>`);
+  $('#d-contact').innerHTML = c.join('');
+  drawMinimap(t);
+  $('#ov-dossier').classList.add('on');
+}
+function drawMinimap(t){
+  const m = $('#d-minimap'); m.innerHTML='';
+  const mw = 316, mh = 160; m.setAttribute('viewBox',`0 0 ${mw} ${mh}`);
+  const sc = Math.min(mw/W, mh/H)*0.96;
+  const ox = (mw - W*sc)/2, oy = (mh - H*sc)/2;
+  D.sectors.forEach(s=>{
+    const pts = s.ring.map(p=>`${(px(p[0])*sc+ox).toFixed(1)},${(py(p[1])*sc+oy).toFixed(1)}`).join(' ');
+    const isHome = s.zip === t.sector;
+    m.appendChild(el('polygon',{points:pts, fill: isHome?'rgba(52,211,153,.22)':'rgba(20,80,60,.10)',
+      stroke: isHome?'var(--green)':'#12422c','stroke-width':isHome?1.2:0.6}));
+  });
+  if(t._x != null){
+    m.appendChild(el('circle',{cx:t._x*sc+ox, cy:t._y*sc+oy, r:4, fill:'var(--green)'}));
+    const ring = el('circle',{cx:t._x*sc+ox, cy:t._y*sc+oy, r:8, fill:'none', stroke:'var(--green)','stroke-width':1});
+    ring.innerHTML = '<animate attributeName="r" values="5;14" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0" dur="1.6s" repeatCount="indefinite"/>';
+    m.appendChild(ring);
+  }
+}
+$('#d-close').onclick = ()=> $('#ov-dossier').classList.remove('on');
+$('#d-report').onclick = ()=> openReport(curT);
+$('#d-draft').onclick = ()=> openDraft(curT);
+function paintStatusBtn(t){
+  const st = getStatus(t);
+  const b = $('#d-status');
+  b.textContent = `STATUS · ${st || '—'}`;
+  b.style.color = st==='ACCOUNT' ? 'var(--green)' : st==='PASS' ? 'var(--dim)' : st ? 'var(--cyan)' : '';
+}
+$('#d-status').onclick = ()=>{ if(!curT) return; cycleStatus(curT); paintStatusBtn(curT); renderPipe(); };
+
+/* ---------- research report ---------- */
+function evidence(t){
+  const e = {icp:[],pain:[],reach:[],fresh:[]};
+  const srcName = {license:'Chicago Business Licenses (r5kz-chrr)', ilcc:'the ILCC daily export',
+    inspection:'Chicago Food Inspections (4ijn-s7e5)', permit:'Chicago Building Permits (ydr8-5enu)'}[t.source_kind];
+  e.icp.push(`${t.klass||'food business'} — classification from ${srcName}`);
+  if((t.stages_seen||[]).length>1) e.icp.push(`sighted at ${t.stages_seen.length} stages (${t.stages_seen.join(' → ')}) — definitely a real opening`);
+  if(t.stage===0){
+    e.pain.push(`build-out permit on file — 2-6 months pre-opening, no packaging spec'd yet`);
+    e.fresh.push(`permit issued ${t.issued} (${t.days_ago} days ago)`);
+  } else if(t.stage===1){
+    e.pain.push(`passed its pre-opening 'License' inspection — opening is days out`);
+    e.pain.push(`no license ISSUE row yet — no distributor has this account`);
+    e.fresh.push(`inspection passed ${t.issued} (${t.days_ago} days ago)`);
+  } else {
+    e.pain.push(`inside the new-account window — first packaging orders happening now`);
+    e.fresh.push(`license signal ${t.issued} (${t.days_ago} days ago)`);
+  }
+  if(t.foam){
+    e.pain.push(`${t.foam} — SB 0058 is live law for state-agency supply chains and SB 1531 (retail foam ban) passed the Senate`);
+  }
+  if(t.is_new) e.fresh.push(`NEW this sweep — was not on the previous run of the grid`);
+  if(t.phone) e.reach.push(`phone on the ILCC license record · ${t.phone}`);
+  else e.reach.push(`no phone published on the city datasets — walk-in / lookup route`);
+  if(t.contact_name) e.reach.push(`name on file: ${t.contact_name}`);
+  if(t.county==='DuPage') e.reach.push(`DuPage-based — United Packaging's home county (Bensenville)`);
+  if(t.county==='Cook') e.reach.push(`Cook County — inside the daily delivery footprint`);
+  return e;
+}
+function openReport(t){
+  $('#ov-dossier').classList.remove('on');
+  $('#r-cs').textContent = `${t.id} ${t.callsign} — ${t.company}`;
+  const ev = evidence(t);
+  $('#r-sections').innerHTML = Object.entries(t.subscores).map(([k,v])=>`
+    <div class="evid"><div class="eh"><span class="nm">${SUBNAMES[k]} · WEIGHT ${Math.round(D.weights[k])}%</span><span class="sc">${v}<span style="font-size:9px;color:var(--txt-dim)"> /100</span></span></div>
+    <ul>${ev[k].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+  $('#r-vtrail').innerHTML = t.verification.map(v=>
+    `<div class="ln"><span class="s-${v.s==='ok'?'ok':'pend'}">[${v.s}]</span><span>${v.msg}</span></div>`).join('');
+  $('#r-srcs').innerHTML = D.system.sources.map(s=>`<li>${s}</li>`).join('');
+  $('#ov-report').classList.add('on');
+}
+$('#r-close').onclick = ()=> $('#ov-report').classList.remove('on');
+$('#r-engage').onclick = ()=> { $('#ov-report').classList.remove('on'); openDraft(curT); };
+
+/* ---------- outreach draft ---------- */
+function openDraft(t){
+  $('#ov-dossier').classList.remove('on');
+  $('#x-cs').textContent = `${t.id} ${t.callsign} — ${t.company}`;
+  $('#x-body').textContent = t.outreach_draft;
+  $('#ov-draft').classList.add('on');
+}
+$('#x-close').onclick = ()=> $('#ov-draft').classList.remove('on');
+
+/* ---------- COPY DRAFT (additive, all viewports) ---------- */
+let copyTimer = null;
+$('#copydraft').onclick = ()=>{
+  const btn = $('#copydraft');
+  const txt = $('#x-body').textContent || '';
+  const done = ()=>{
+    btn.textContent = 'COPIED ✓';
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(()=>{ btn.textContent = 'COPY DRAFT'; }, 1600);
+  };
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done, done);
+    } else {
+      // headless / non-secure-context fallback — must not throw
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e){}
+      ta.remove(); done();
+    }
+  }catch(e){ done(); }
+};
+
+/* ---------- mobile: pipeline is the primary surface (additive) ---------- */
+if(window.matchMedia('(max-width:900px)').matches){
+  const pb = $$('nav button').find(b=>b.dataset.v==='pipe');
+  if(pb) pb.click();
+}
+
+/* ---------- pipeline table ---------- */
+const subBits = [`${D.targets.length} TARGETS`,
+  `${D.kpis.new_accounts.toLocaleString('en-US')} IN THE NEW-ACCOUNT WINDOW`,
+  `${D.kpis.imminent} OPENING IMMINENT`, `${D.kpis.buildouts} BUILD-OUTS`];
+if(D.kpis.foam_flags != null) subBits.push(`${D.kpis.foam_flags} FOAM-FLAGGED`);
+if(D.kpis.new_since_last) subBits.push(`${D.kpis.new_since_last} NEW SINCE LAST SWEEP`);
+subBits.push(`AVG SCORE ${D.kpis.avg_score}`);
+$('#pipe-sub').textContent = subBits.join(' · ');
+function renderPipe(){
+  $('#pipebody').innerHTML = D.targets.map((t,i)=>{
+    const st = getStatus(t);
+    return `
+  <tr data-i="${i}">
+    <td class="cs">${t.id} ${t.callsign}${t.is_new?' <span class="badge new">NEW</span>':''}</td>
+    <td class="biz">${t.company}${t.foam?' <span class="badge foam">FOAM</span>':''}</td>
+    <td>${t.sector}</td>
+    <td><span class="chip ${STAGE_CHIP[t.stage]}">${t.stage_label}</span></td>
+    <td>${t.score}<span class="minibar"><i style="width:${t.score}%"></i></span></td>
+    <td><span class="chip ${t.pipeline_status}">${t.pipeline_status}</span></td>
+    <td><span class="chip opchip ${st||'NONE'}" data-op="${i}" title="click to cycle">${st||'— SET'}</span></td>
+    <td class="ev">${t.last_event}</td>
+  </tr>`;}).join('');
+}
+renderPipe();
+$('#pipebody').onclick = e=>{
+  const op = e.target.closest('.opchip');
+  if(op){                       // cycle operator status in place, don't open
+    cycleStatus(D.targets[+op.dataset.op]);
+    renderPipe();
+    return;
+  }
+  const tr = e.target.closest('tr'); if(tr) openDossier(D.targets[+tr.dataset.i]);
+};
+
+/* ---------- system view ---------- */
+const S = D.system;
+$('#n-permits').textContent = S.recon_licenses.toLocaleString();
+$('#n-insp').textContent = S.recon_inspections.toLocaleString();
+$('#n-bperm').textContent = S.recon_permits.toLocaleString();
+$('#n-ilcc').textContent = S.recon_ilcc.toLocaleString();
+$('#n-parse').textContent = S.parse.toLocaleString();
+$('#n-enrich').textContent = S.enrich.toLocaleString();
+$('#n-score').textContent = S.score.toLocaleString();
+$('#n-dossier').textContent = S.dossier;
+$('#n-outreach').textContent = S.outreach;
+$('#pills').innerHTML = `
+  <span class="pill">ST-1 CHI LICENSE SWEEP · ONLINE</span>
+  <span class="pill">ST-2 INSPECTION WATCH · ONLINE</span>
+  <span class="pill">ST-3 PERMIT WATCH · ONLINE</span>
+  <span class="pill">ST-4 ILCC DIFF · ARMED</span>
+  <span class="pill q">WALK-IN ROUTES · ${S.trace_queued} QUEUED</span>
+  <span class="pill">DRAFT ENGINE · ${S.outreach} STAGED</span>`;
+
+const OPS = [
+  ()=>`sector ${D.targets[Math.floor(Math.random()*D.targets.length)].sector} re-swept · unchanged`,
+  ()=>`license file delta check · 0 new rows`,
+  ()=>{const t=D.targets[Math.floor(Math.random()*D.targets.length)];return `score held on re-run · ${t.id}`},
+  ()=>`socrata feeds refresh daily · next pull 06:00 CT`,
+  ()=>{const t=D.targets[Math.floor(Math.random()*D.targets.length)];return `dossier refreshed · ${t.id} ${t.callsign}`},
+  ()=>`ilcc export watch · diff armed`,
+  ()=>{const f=D.feed[Math.floor(Math.random()*D.feed.length)];return `stage check · sector ${f.sector}`},
+  ()=>`cross-stage dedupe pass · 0 new collisions`,
+];
+const opsFeed = $('#opsfeed');
+let opsN = 0; const t0 = Date.now();
+function pushOps(){
+  const d = document.createElement('div'); d.className = 'ops'+(Math.random()<.3?' hi':'');
+  const now = new Date();
+  d.innerHTML = `<span class="t">${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}</span>${OPS[Math.floor(Math.random()*OPS.length)]()}`;
+  opsFeed.prepend(d);
+  while(opsFeed.children.length>40) opsFeed.lastChild.remove();
+  opsN++;
+  $('#s-events').textContent = opsN + eventsCount;
+  $('#s-thru').textContent = Math.max(1,Math.round((opsN+eventsCount)/Math.max(1,(Date.now()-t0)/60000)))+'/m';
+}
+for(let i=0;i<10;i++) pushOps();
+setInterval(pushOps, 3500);
+setInterval(()=>{
+  const s = Math.floor((Date.now()-t0)/1000);
+  $('#s-up').textContent = String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0');
+},1000);
+
+/* ---------- cycle clock + re-sweep ---------- */
+let cyc = 180;
+setInterval(()=>{
+  cyc--; if(cyc<0){ cyc = 180; resweep(); }
+  $('#clock').textContent = String(Math.floor(cyc/60)).padStart(2,'0')+':'+String(cyc%60).padStart(2,'0');
+},1000);
+function resweep(){
+  sweepStart = performance.now();
+  fireKpis();
+  for(let i=0;i<3;i++) setTimeout(pushDrop, i*350);
+}
+$('#resweep').onclick = ()=>{ cyc = 180; resweep(); };
+
+/* ---------- boot sequence ---------- */
+const boot = $('#boot');
+const lines = [
+  'PACKAGING GRID v1 · CHICAGO METRO',
+  'authenticating against public record systems … ok',
+  `chicago license file … ${S.recon_licenses.toLocaleString()} ISSUE rows (${D.kpis.lookback_days}d)`,
+  `food-inspection watch … ${D.kpis.imminent} pre-opening passes, license pending`,
+  `building-permit watch … ${D.kpis.buildouts} food build-outs in flight`,
+  `ilcc export … ${S.recon_ilcc.toLocaleString()} new metro retail licenses (lagging file · diff armed)`,
+  D.kpis.foam_flags != null
+    ? `foam-ban overlay … ${D.kpis.foam_flags} foam-heavy concepts flagged`
+    : 'foam-ban overlay … pending',
+  `account scoring … ${S.score.toLocaleString()} businesses → ${S.dossier} targets`,
+  'dropping pins …',
+];
+lines.forEach((l,i)=>{
+  const d = document.createElement('div'); d.className='bl'; d.style.animationDelay=(i*.16)+'s';
+  d.textContent = '▸ '+l; boot.appendChild(d);
+});
+const cur = document.createElement('div'); cur.innerHTML = '<span class="cursor"></span>';
+cur.className='bl'; cur.style.animationDelay=(lines.length*.16)+'s'; boot.appendChild(cur);
+function dismissBoot(){ boot.classList.add('off'); fireKpis(); }
+setTimeout(dismissBoot, lines.length*160+900);
+boot.onclick = dismissBoot;
+
+/* inject follow-up overlay at body level (slot 020 is nested in a hidden overlay, so build it here instead) */
+document.body.insertAdjacentHTML('beforeend', `
+<div class="overlay" id="ov-followup">
+<style>
+#ov-followup .fu-wrap{max-width:940px;margin:38px auto;padding:0 22px 70px}
+#ov-followup .fu-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
+#ov-followup .fu-h1{font-size:22px;font-weight:600;color:var(--txt)}
+#ov-followup .fu-sub{color:var(--txt-dim);font-size:12.5px;line-height:1.5;margin-top:3px;max-width:640px}
+#ov-followup .fu-repbar{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin-bottom:16px;flex-wrap:wrap}
+#ov-followup .fu-repbar label{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--txt-dim)}
+#ov-followup .fu-repbar input{background:#02100b;border:1px solid var(--line);border-radius:7px;color:var(--txt);padding:8px 11px;font-size:14px;font-family:inherit;min-width:220px;outline:none}
+#ov-followup .fu-repbar input:focus{border-color:var(--green-dim);box-shadow:0 0 0 3px var(--green-glow)}
+#ov-followup .fu-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+#ov-followup .fu-board{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+#ov-followup .fu-note{font-size:10.5px;color:var(--txt-dim);margin-left:4px}
+#ov-followup .fu-kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;min-width:96px}
+#ov-followup .fu-kpi .v{font-size:22px;font-weight:700;color:var(--txt)}
+#ov-followup .fu-kpi .v.over{color:#ff6b6b}#ov-followup .fu-kpi .v.due{color:var(--amber)}#ov-followup .fu-kpi .v.won{color:var(--green)}
+#ov-followup .fu-kpi .k{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt-dim);margin-top:3px}
+#ov-followup .fu-sec{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);margin:24px 0 9px;border-bottom:1px solid var(--line);padding-bottom:6px}
+#ov-followup .fu-empty{color:#4d7d68;font-size:12.5px;font-style:italic;padding:5px 2px}
+#ov-followup .fu-card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:10px}
+#ov-followup .fu-card.over{border-left:3px solid #ff6b6b}#ov-followup .fu-card.due{border-left:3px solid var(--amber)}
+#ov-followup .fu-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#ov-followup .fu-nm{font-size:15px;font-weight:600;color:var(--txt)}
+#ov-followup .fu-meta{color:var(--txt-dim);font-size:11.5px;margin-top:3px;line-height:1.5}
+#ov-followup .fu-tag{display:inline-block;font-size:9px;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--txt-dim);margin-right:5px}
+#ov-followup .fu-tag.c{color:#5ec8ff;border-color:#2b5f7a}#ov-followup .fu-tag.f{color:var(--amber);border-color:#7a5a16}
+#ov-followup .fu-when{font-size:12px;font-weight:700;white-space:nowrap}
+#ov-followup .fu-when.over{color:#ff6b6b}#ov-followup .fu-when.due{color:var(--amber)}#ov-followup .fu-when.up{color:var(--txt-dim)}
+#ov-followup .fu-msg{margin-top:10px;background:#02100b;border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-size:12.5px;line-height:1.55;white-space:pre-wrap;color:#c8efdd}
+#ov-followup .fu-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#ov-followup .fu-b{font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border-radius:7px;padding:7px 12px;border:1px solid var(--line);background:#02100b;color:var(--txt);letter-spacing:.03em}
+#ov-followup .fu-b:hover{filter:brightness(1.18)}
+#ov-followup .fu-b.pr{background:var(--green);color:#02140d;border-color:var(--green)}
+#ov-followup .fu-b.cp{color:#5ec8ff;border-color:#2b5f7a}
+#ov-followup .fu-b.wn{color:var(--green);border-color:var(--green-dim)}
+#ov-followup .fu-b.ls{color:#ff6b6b;border-color:#7a2b2b}#ov-followup .fu-b.gh{color:var(--txt-dim)}
+#ov-followup .fu-srow{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 14px;margin-bottom:7px}
+</style>
+<div class="fu-wrap">
+  <div class="fu-head">
+    <div><div class="fu-h1">Follow-Up Engine</div>
+    <div class="fu-sub">Nobody falls through. The Grid finds the lead; this keeps the next touch in front of you until it's an account. It only writes the messages &mdash; you send them. Won/Passed here updates the board.</div></div>
+    <button id="fu-close" class="fu-b gh">ESC &times;</button>
+  </div>
+  <div class="fu-repbar"><label>Your name</label><input id="fu-rep" type="text" placeholder="e.g. Justin" autocomplete="off"></div>
+  <div class="fu-kpis">
+    <div class="fu-kpi"><div class="v over" id="fu-k-over">0</div><div class="k">Overdue</div></div>
+    <div class="fu-kpi"><div class="v due" id="fu-k-due">0</div><div class="k">Due today</div></div>
+    <div class="fu-kpi"><div class="v" id="fu-k-active">0</div><div class="k">Active</div></div>
+    <div class="fu-kpi"><div class="v won" id="fu-k-won">0</div><div class="k">Won</div></div>
+  </div>
+  <div class="fu-sec">Scoreboard</div>
+  <div class="fu-board">
+    <div class="fu-kpi"><div class="v" id="fu-s-contacted">0</div><div class="k">Contacted</div></div>
+    <div class="fu-kpi"><div class="v" id="fu-s-responded">0</div><div class="k">Responded</div></div>
+    <div class="fu-kpi"><div class="v won" id="fu-s-account">0</div><div class="k">Accounts won</div></div>
+    <div class="fu-kpi"><div class="v" id="fu-s-pass">0</div><div class="k">Passed</div></div>
+    <div class="fu-kpi"><div class="v" id="fu-s-winrate">0%</div><div class="k">Win rate</div></div>
+    <div class="fu-kpi"><div class="v won" id="fu-s-value">&mdash;</div><div class="k">Est. monthly $</div></div>
+  </div>
+  <div class="fu-repbar"><label>$ / new account / mo</label><input id="fu-acct" type="number" min="0" placeholder="optional — e.g. 800" autocomplete="off"><span class="fu-note">drives Est. monthly $</span></div>
+  <div class="fu-sec">Do these now</div><div id="fu-due"></div>
+  <div class="fu-sec">Coming up</div><div id="fu-up"></div>
+  <div class="fu-sec">Start a cadence</div><div id="fu-start"></div>
+  <div class="fu-sec">Closed</div><div id="fu-closed"></div>
+</div>
+</div>
+`);
+
+/* ===== Follow-Up Engine (integrated into the board) ===== */
+(function(){
+  const DAYMS=86400000, LEADS=(D&&D.targets)?D.targets:[];
+  const FU_KEY='upkFollowup', REP_KEY='upkRepName';
+  let FU; try{FU=JSON.parse(localStorage.getItem(FU_KEY))||{}}catch(e){FU={}}
+  function saveFU(){try{localStorage.setItem(FU_KEY,JSON.stringify(FU))}catch(e){}}
+  function setStat(t,s){if(s)opStatus[skey(t)]=s;else delete opStatus[skey(t)];try{localStorage.setItem(STATUS_KEY,JSON.stringify(opStatus))}catch(e){}}
+  const t0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+  const fdate=ms=>new Date(ms).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  const fn=c=>{c=(c||'').trim();return c?c.split(/\s+/)[0]:'there'};
+  const rep=()=>{const r=document.querySelector('#fu-rep');return (r&&r.value.trim())||'United Packaging'};
+  function steps(l){return l.stage===0
+    ?[{k:'intro',l:'Intro touch',d:0},{k:'m1',l:'Monthly seed',d:30},{k:'m2',l:'Monthly seed',d:60},{k:'open',l:'Opening check',d:90}]
+    :[{k:'intro',l:'Intro touch',d:0},{k:'nudge',l:'Nudge',d:3},{k:'sample',l:'Sample / first order',d:7},{k:'check',l:'Check-in',d:30},{k:'monthly',l:'Monthly check-in',d:60}];}
+  function packLine(l){const k=(l.type_family||'').toUpperCase();
+    if(k==='GROCERY'||k==='STORE'||k==='CONVENIENCE')return 'deli/bakery trays, film, produce bags and grab-and-go packaging';
+    if(k==='PROCESSOR')return 'bulk films, trays, labels and case-ready packaging';
+    if(k==='CATERING')return 'to-go containers, foil pans, cups, lids and serving disposables';
+    return 'to-go containers, cups, lids, bags, napkins and daily disposables';}
+  function foam(l){return l.foam?"\n\nHeads-up too: Illinois already bans foam foodware for state vendors and the retail ban passed the Senate — we carry the compliant replacements, so a switch is painless.":'';}
+  function draft(l,k){const w=fn(l.contact_name),co=l.company||'your business',r=rep();
+    if(k==='intro')return l.outreach_draft||('Hi '+w+', congratulations on '+co+". I'm with United Packaging in Bensenville — we supply "+packLine(l)+' and run our own delivery trucks, so reorders are fast. Could I send a quick catalog or a sample pack?'+foam(l)+'\n\n— '+r+', United Packaging');
+    if(k==='nudge')return 'Hi '+w+' — following up on '+co+'. As you get set up we stock '+packLine(l)+', and being local we turn reorders around fast. What are you using most right now?\n\n— '+r+', United Packaging';
+    if(k==='sample')return 'Hi '+w+' — now that '+co+" is open, want me to put together a starter pack of what you'll go through fastest? I can match your current pricing and have it on your shelf this week."+foam(l)+'\n\n— '+r+', United Packaging';
+    if(k==='open')return 'Hi '+w+' — saw '+co+' is getting close to opening. Want your packaging dialed in before day one? I can spec a starter order. — '+r+', United Packaging';
+    return 'Hi '+w+' — checking in on '+co+". How's your packaging supply holding up? Happy to quote anything you're reordering.\n\n— "+r+', United Packaging';}
+  const recOf=l=>FU[skey(l)];
+  function startC(l){FU[skey(l)]={start:t0(),step:0,history:[],outcome:'',snooze:0};if(!opStatus[skey(l)])setStat(l,'CONTACTED');saveFU();renderFU();}
+  function dueDt(l,r){const s=steps(l),i=Math.min(r.step,s.length-1);return Math.max(r.start+s[i].d*DAYMS,r.snooze||0);}
+  function sent(l){const r=recOf(l),s=steps(l);r.history.push({step:s[Math.min(r.step,s.length-1)].k,date:t0()});r.step++;r.snooze=0;if(r.step>=s.length)r.outcome='NURTURED';saveFU();renderFU();}
+  function snz(l,d){recOf(l).snooze=t0()+d*DAYMS;saveFU();renderFU();}
+  function won(l){recOf(l).outcome='WON';setStat(l,'ACCOUNT');saveFU();renderFU();}
+  function lost(l){recOf(l).outcome='LOST';setStat(l,'PASS');saveFU();renderFU();}
+  function reopen(l){const r=recOf(l);r.outcome='';r.snooze=0;setStat(l,'CONTACTED');saveFU();renderFU();}
+  function cp(txt,b){try{navigator.clipboard.writeText(txt)}catch(e){}const o=b.textContent;b.textContent='Copied ✓';setTimeout(()=>b.textContent=o,1400);}
+  function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+  function mkb(label,cls,f){const b=document.createElement('button');b.className='fu-b '+cls;b.textContent=label;b.onclick=f;return b;}
+  function card(l,cls,whenTxt,whenCls){const r=recOf(l),s=steps(l),st=s[Math.min(r.step,s.length-1)];
+    const c=document.createElement('div');c.className='fu-card '+cls;
+    c.innerHTML='<div class="fu-top"><div><div class="fu-nm">'+esc(l.company)+'</div><div class="fu-meta">'+esc(l.klass||'')+' · '+esc(l.city||'')+(l.phone?' · '+esc(l.phone):' · no phone')+'<br><span class="fu-tag c">Touch '+(r.step+1)+'/'+s.length+' · '+esc(st.l)+'</span>'+(l.foam?'<span class="fu-tag f">Foam</span>':'')+'</div></div><div class="fu-when '+whenCls+'">'+whenTxt+'</div></div>';
+    const m=document.createElement('div');m.className='fu-msg';m.textContent=draft(l,st.k);c.appendChild(m);
+    const row=document.createElement('div');row.className='fu-row';
+    row.append(mkb('Copy','cp',e=>cp(draft(l,st.k),e.target)),mkb('Mark sent →','pr',()=>sent(l)),mkb('Snooze 2d','gh',()=>snz(l,2)),mkb('Won','wn',()=>won(l)),mkb('Passed','ls',()=>lost(l)));
+    c.appendChild(row);return c;}
+  function renderFU(){const now=t0();const dueA=[],upA=[],ns=[],cl=[];let ov=0,dn=0,ac=0,wn=0;
+    for(const l of LEADS){const r=recOf(l);if(!r){ns.push(l);continue;}
+      if(r.outcome==='WON'){wn++;cl.push([l,'WON']);continue;}
+      if(r.outcome==='LOST'){cl.push([l,'LOST']);continue;}
+      if(r.outcome==='NURTURED'){cl.push([l,'NURTURED']);continue;}
+      ac++;const d=dueDt(l,r);if(d<now){ov++;dueA.push([l,d,true]);}else if(d===now){dn++;dueA.push([l,d,false]);}else upA.push([l,d]);}
+    dueA.sort((a,b)=>a[1]-b[1]);upA.sort((a,b)=>a[1]-b[1]);
+    var q=s=>document.querySelector(s);
+    q('#fu-k-over').textContent=ov;q('#fu-k-due').textContent=dn;q('#fu-k-active').textContent=ac;q('#fu-k-won').textContent=wn;
+    // scoreboard from the board's own status map (all touched leads, unified)
+    const sc={CONTACTED:0,RESPONDED:0,ACCOUNT:0,PASS:0};
+    for(const k in opStatus){ if(sc[opStatus[k]]!==undefined) sc[opStatus[k]]++; }
+    const worked=sc.CONTACTED+sc.RESPONDED+sc.ACCOUNT+sc.PASS;
+    q('#fu-s-contacted').textContent=sc.CONTACTED;
+    q('#fu-s-responded').textContent=sc.RESPONDED;
+    q('#fu-s-account').textContent=sc.ACCOUNT;
+    q('#fu-s-pass').textContent=sc.PASS;
+    q('#fu-s-winrate').textContent=worked?Math.round(sc.ACCOUNT/worked*100)+'%':'0%';
+    const av=parseFloat(localStorage.getItem('upkAcctValue')||'')||0;
+    q('#fu-s-value').textContent=av?('$'+(av*sc.ACCOUNT).toLocaleString()+'/mo'):'—';
+    const dl=q('#fu-due');dl.innerHTML='';if(!dueA.length)dl.innerHTML='<div class="fu-empty">Nothing due. Start a cadence below.</div>';
+    dueA.forEach(a=>dl.appendChild(card(a[0],a[2]?'over':'due',a[2]?('Overdue · '+fdate(a[1])):'Due today',a[2]?'over':'due')));
+    const ul=q('#fu-up');ul.innerHTML='';if(!upA.length)ul.innerHTML='<div class="fu-empty">No upcoming touches.</div>';
+    upA.forEach(a=>ul.appendChild(card(a[0],'','Due '+fdate(a[1]),'up')));
+    const sl=q('#fu-start');sl.innerHTML='';if(!ns.length)sl.innerHTML='<div class="fu-empty">Every target has a cadence going.</div>';
+    ns.forEach(l=>{const row=document.createElement('div');row.className='fu-srow';
+      row.innerHTML='<div><div class="fu-nm">'+esc(l.company)+'</div><div class="fu-meta">'+esc(l.klass||'')+' · '+esc(l.city||'')+' · '+esc(l.stage_label||'')+(l.foam?' · foam':'')+'</div></div>';
+      row.appendChild(mkb('Start','pr',()=>startC(l)));sl.appendChild(row);});
+    const cc=q('#fu-closed');cc.innerHTML='';if(!cl.length)cc.innerHTML='<div class="fu-empty">Nothing closed yet.</div>';
+    cl.forEach(a=>{const l=a[0],o=a[1];const row=document.createElement('div');row.className='fu-srow';
+      const col=o==='WON'?'var(--green)':o==='LOST'?'#ff6b6b':'var(--txt-dim)';
+      row.innerHTML='<div><div class="fu-nm">'+esc(l.company)+'</div><div class="fu-meta" style="color:'+col+'">'+o+'</div></div>';
+      row.appendChild(mkb('Reopen','gh',()=>reopen(l)));cc.appendChild(row);});}
+  function openFU(){const r=document.querySelector('#fu-rep');if(r)r.value=localStorage.getItem(REP_KEY)||'';const a=document.querySelector('#fu-acct');if(a)a.value=localStorage.getItem('upkAcctValue')||'';renderFU();document.querySelector('#ov-followup').classList.add('on');}
+  const nb=document.querySelector('#nav-fu');if(nb)nb.onclick=function(e){e.stopPropagation();openFU();};
+  const fc=document.querySelector('#fu-close');if(fc)fc.onclick=()=>document.querySelector('#ov-followup').classList.remove('on');
+  const re=document.querySelector('#fu-rep');if(re)re.addEventListener('input',()=>{localStorage.setItem(REP_KEY,re.value);renderFU();});
+  const ac2=document.querySelector('#fu-acct');if(ac2)ac2.addEventListener('input',()=>{localStorage.setItem('upkAcctValue',ac2.value);renderFU();});
+})();
+</script>
+</body>
+</html>

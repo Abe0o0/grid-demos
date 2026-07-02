@@ -1,0 +1,16 @@
+# ---- PII guard — this repo publishes to GitHub Pages ------------------
+# The radar repos bake ui/data.js (40 demo pins) for publication here.
+# The full pool / call sheet CSVs carry real phones, emails and NPNs and
+# must NEVER land in this repo. CSVs are blanket-banned; force-add (-f)
+# only something verified PII-free.
+*.csv
+full_pool*
+call_sheet*
+data/raw/
+data/state/
+*.part
+
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store

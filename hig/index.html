@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AGENT GRID — SOUTH FLORIDA</title>
+<meta name="theme-color" content="#04090b">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2304090b'/%3E%3Ccircle cx='8' cy='8' r='5' fill='none' stroke='%2336ff9c' stroke-width='1.2'/%3E%3Ccircle cx='8' cy='8' r='1.6' fill='%2336ff9c'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#04090b; --bg2:#061014; --panel:#071317; --line:#0e2a22;
+  --grid:#0a1f1a; --green:#36ff9c; --green-dim:#1c8f5c; --green-glow:rgba(54,255,156,.45);
+  --amber:#ffb340; --amber-dim:#8f6520; --red:#ff4d5e; --dim:#3e6b58;
+  --txt:#bfe8d4; --txt-dim:#5d8a76; --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mono);font-size:13px;overflow:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);opacity:.5}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:radial-gradient(ellipse at 50% 40%,transparent 55%,rgba(0,0,0,.55) 100%)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:stretch;border-bottom:1px solid var(--line);background:var(--bg2);height:64px}
+.brand{display:flex;flex-direction:column;justify-content:center;padding:0 22px;border-right:1px solid var(--line);min-width:240px}
+.brand h1{font-size:15px;letter-spacing:.22em;color:var(--green);text-shadow:0 0 12px var(--green-glow);white-space:nowrap}
+.brand small{color:var(--txt-dim);letter-spacing:.18em;font-size:9px;margin-top:3px}
+nav{display:flex;border-right:1px solid var(--line)}
+nav button{background:none;border:none;border-right:1px solid var(--line);color:var(--txt-dim);
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;padding:0 26px;cursor:pointer;position:relative;transition:color .2s}
+nav button:hover{color:var(--txt)}
+nav button.on{color:var(--green);text-shadow:0 0 10px var(--green-glow)}
+nav button.on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--green);box-shadow:0 0 8px var(--green-glow)}
+.kpis{display:flex;flex:1}
+.kpi{display:flex;flex-direction:column;justify-content:center;padding:0 22px;border-right:1px solid var(--line)}
+.kpi label{font-size:9px;letter-spacing:.2em;color:var(--txt-dim)}
+.kpi .v{font-size:19px;color:var(--green);text-shadow:0 0 10px var(--green-glow);margin-top:2px;font-weight:600}
+.kpi .v.amber{color:var(--amber);text-shadow:0 0 10px rgba(255,179,64,.4)}
+.cycle{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:0 22px;margin-left:auto}
+.cycle label{font-size:9px;letter-spacing:.2em;color:var(--txt-dim)}
+.cycle .clock{font-size:17px;color:var(--txt)}
+.resweep{background:none;border:1px solid var(--green-dim);color:var(--green);font-family:var(--mono);
+  font-size:9px;letter-spacing:.2em;padding:4px 12px;margin-top:4px;cursor:pointer;transition:all .2s}
+.resweep:hover{background:var(--green);color:#000;box-shadow:0 0 16px var(--green-glow)}
+
+/* ---------- layout ---------- */
+main{display:flex;height:calc(100% - 64px)}
+.view{display:none;width:100%;height:100%}
+.view.on{display:flex}
+
+/* ---------- war map ---------- */
+#mapwrap{flex:1;position:relative;overflow:hidden;background:
+  radial-gradient(circle at 50% 45%,#07181466 0%,transparent 70%),var(--bg)}
+#mapsvg{width:100%;height:100%;display:block}
+.gridline{stroke:var(--grid);stroke-width:1}
+.sector{fill:rgba(20,80,60,.10);stroke:#13452f;stroke-width:1;transition:fill .25s;cursor:crosshair}
+.sector:hover{fill:rgba(54,255,156,.14);stroke:var(--green-dim)}
+.sector.hot{fill:rgba(54,255,156,.07);stroke:#1d6b48}
+.sector-label{fill:#2c5a47;font-size:9px;font-family:var(--mono);letter-spacing:.08em;pointer-events:none}
+.pin{cursor:pointer}
+.pin circle.core{transition:r .15s}
+.pin.PRIORITY circle.core{fill:var(--green);filter:drop-shadow(0 0 6px var(--green-glow))}
+.pin.ACTIVE circle.core{fill:var(--amber);filter:drop-shadow(0 0 5px rgba(255,179,64,.5))}
+.pin.WATCH circle.core{fill:#2e6b51;filter:drop-shadow(0 0 3px rgba(54,255,156,.25))}
+.pin circle.ring{fill:none;stroke-width:1;opacity:0}
+.pin.PRIORITY circle.ring{stroke:var(--green)}
+.pin.ACTIVE circle.ring{stroke:var(--amber)}
+.pin.WATCH circle.ring{stroke:#2e6b51}
+.pin.blip circle.ring{animation:ringout 1s ease-out}
+.pin.sel circle.core{r:7;stroke:#fff;stroke-width:1}
+.pin text{fill:var(--txt-dim);font-size:8px;font-family:var(--mono);letter-spacing:.1em;pointer-events:none}
+.pin.PRIORITY text{fill:var(--green)}
+@keyframes ringout{0%{opacity:.9;r:5}100%{opacity:0;r:26}}
+#sweepwedge{transform-origin:var(--cx) var(--cy);animation:sweep 7.5s linear infinite}
+@keyframes sweep{to{transform:rotate(360deg)}}
+.maphud{position:absolute;font-size:9px;letter-spacing:.18em;color:var(--txt-dim);pointer-events:none}
+.maphud b{color:var(--green);font-weight:400}
+#hud-tl{top:14px;left:18px}
+#hud-bl{bottom:14px;left:18px}
+#hud-br{bottom:14px;right:18px;text-align:right}
+.tierfilter{position:absolute;top:14px;right:18px;display:flex;gap:6px}
+.tierfilter button{background:rgba(4,9,11,.8);border:1px solid var(--line);color:var(--txt-dim);
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;padding:5px 10px;cursor:pointer}
+.tierfilter button.on{color:var(--green);border-color:var(--green-dim)}
+.tierfilter button.on.t-A{color:var(--amber);border-color:var(--amber-dim)}
+.tierfilter button.on.t-W{color:var(--dim);border-color:var(--dim)}
+#tooltip{position:absolute;background:rgba(4,12,10,.95);border:1px solid var(--line);padding:7px 10px;
+  font-size:10px;pointer-events:none;display:none;z-index:50;letter-spacing:.05em}
+#tooltip b{color:var(--green)}
+
+/* ---------- drop feed / dossier card ---------- */
+#sidebar{width:340px;border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;position:relative}
+.sidehead{padding:13px 16px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.25em;color:var(--green);
+  text-shadow:0 0 8px var(--green-glow);display:flex;justify-content:space-between;align-items:center}
+.sidehead .live{color:var(--red);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.25}}
+#feed{flex:1;overflow-y:auto;padding:6px 0}
+.drop{padding:9px 16px;border-bottom:1px solid #0a1c16;animation:dropin .4s ease-out}
+@keyframes dropin{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+.drop .t1{display:flex;justify-content:space-between;font-size:11px}
+.drop .t1 b{color:var(--txt);font-weight:600;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drop .t1 span{color:var(--green)}
+.drop .t2{display:flex;justify-content:space-between;font-size:9px;color:var(--txt-dim);margin-top:3px;letter-spacing:.08em}
+
+#card{position:absolute;inset:0;background:var(--bg2);display:none;flex-direction:column;z-index:5}
+#card.on{display:flex}
+.cardhead{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.cardhead .cs{font-size:13px;letter-spacing:.2em;color:var(--green);text-shadow:0 0 8px var(--green-glow)}
+.cardhead button{background:none;border:1px solid var(--line);color:var(--txt-dim);font-family:var(--mono);
+  padding:3px 9px;cursor:pointer;font-size:10px}
+.cardbody{flex:1;overflow-y:auto;padding:16px}
+.badges{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+.badge{font-size:8px;letter-spacing:.15em;padding:3px 8px;border:1px solid var(--line);color:var(--txt-dim)}
+.badge.g{color:var(--green);border-color:var(--green-dim)}
+.badge.a{color:var(--amber);border-color:var(--amber-dim)}
+.badge.r{color:var(--red);border-color:#6b2229}
+.badge.new{color:#5ec8ff;border-color:#1d4f6e;text-shadow:0 0 8px rgba(94,200,255,.35)}
+.cardco{font-size:16px;color:#fff;font-weight:600;line-height:1.3}
+.bigval{font-size:26px;color:var(--green);text-shadow:0 0 14px var(--green-glow);margin:8px 0 2px;font-weight:600}
+.bigval small{font-size:9px;color:var(--txt-dim);letter-spacing:.15em;display:block;margin-top:2px}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #0a1c16;font-size:11px}
+.kv label{color:var(--txt-dim);letter-spacing:.1em;font-size:9px}
+.kv span{color:var(--txt);text-align:right;max-width:190px}
+.kv span.phone{color:var(--green);font-size:13px}
+.whybox{margin:14px 0;padding:11px 12px;border:1px solid var(--green-dim);background:rgba(54,255,156,.04)}
+.whybox label{font-size:9px;letter-spacing:.22em;color:var(--green)}
+.whybox p{margin-top:6px;font-size:11px;line-height:1.55;color:var(--txt)}
+.openfull{display:block;width:100%;background:var(--green);border:none;color:#021;font-family:var(--mono);
+  font-size:11px;letter-spacing:.25em;padding:13px;cursor:pointer;font-weight:700;margin-top:14px;
+  box-shadow:0 0 18px var(--green-glow);transition:filter .15s}
+.openfull:hover{filter:brightness(1.15)}
+
+/* ---------- score bars ---------- */
+.scorebig{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.scorebig .n{font-size:30px;color:var(--green);text-shadow:0 0 12px var(--green-glow);font-weight:700}
+.scorebig .d{color:var(--txt-dim);font-size:11px}
+.sub{margin:7px 0}
+.sub .lbl{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.15em;color:var(--txt-dim);margin-bottom:4px}
+.sub .lbl b{color:var(--txt);font-weight:400}
+.bar{height:5px;background:#0a1f1a;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0;right:auto;background:linear-gradient(90deg,var(--green-dim),var(--green));
+  box-shadow:0 0 8px var(--green-glow);width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.bar.amber i{background:linear-gradient(90deg,var(--amber-dim),var(--amber));box-shadow:0 0 8px rgba(255,179,64,.4)}
+
+/* ---------- overlays (dossier / report) ---------- */
+.overlay{position:fixed;inset:0;background:rgba(2,6,7,.92);backdrop-filter:blur(3px);z-index:100;display:none;overflow-y:auto}
+.overlay.on{display:block}
+.sheet{max-width:1060px;margin:30px auto;background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 0 60px rgba(0,0,0,.7),0 0 30px rgba(54,255,156,.05);animation:sheetin .35s ease-out}
+@keyframes sheetin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.sheethead{display:flex;justify-content:space-between;align-items:center;padding:18px 26px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--panel);z-index:5}
+.sheethead .l .cs{font-size:18px;letter-spacing:.25em;color:var(--green);text-shadow:0 0 12px var(--green-glow)}
+.sheethead .l .co{font-size:12px;color:var(--txt-dim);margin-top:4px;letter-spacing:.08em}
+.sheethead .r{display:flex;gap:8px;align-items:center}
+.ghostbtn{background:none;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);
+  font-size:10px;letter-spacing:.18em;padding:9px 16px;cursor:pointer;transition:all .15s}
+.ghostbtn:hover{border-color:var(--green-dim);color:var(--green)}
+.ghostbtn.solid{background:var(--green);color:#021;border-color:var(--green);font-weight:700;box-shadow:0 0 14px var(--green-glow)}
+.sheetgrid{display:grid;grid-template-columns:1fr 360px;gap:0}
+.sheetmain{padding:22px 26px;border-right:1px solid var(--line)}
+.sheetside{padding:22px 22px}
+.sec{margin-bottom:24px}
+.sec h3{font-size:10px;letter-spacing:.25em;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.sec h3 .tag{color:var(--txt-dim);letter-spacing:.1em}
+.verbatim{border:1px solid var(--line);background:#050e0c;padding:13px 15px;font-size:11px;line-height:1.7;color:var(--txt)}
+.verbatim .row{display:flex;gap:10px;padding:2px 0}
+.verbatim .row label{color:var(--txt-dim);min-width:96px;font-size:9px;letter-spacing:.12em;padding-top:2px}
+.whynow{border-left:3px solid var(--green);padding:10px 14px;background:rgba(54,255,156,.04);font-size:12px;line-height:1.6}
+.intel{font-size:11px}
+.intel .ln{display:flex;gap:12px;padding:5px 0;border-bottom:1px dashed #0a1f18;opacity:0;animation:lnin .3s forwards}
+.intel .ln .t{color:var(--green-dim);min-width:44px}
+@keyframes lnin{to{opacity:1}}
+.vtrail{font-size:11px}
+.vtrail .ln{display:flex;gap:10px;padding:4px 0}
+.vtrail .s-ok{color:var(--green)}
+.vtrail .s-pend{color:var(--amber);animation:pulse 1.6s infinite}
+.minimap{border:1px solid var(--line);background:#04100c;margin-top:6px}
+.srcs{font-size:10px;color:var(--txt-dim);line-height:1.9;letter-spacing:.05em}
+.srcs li{list-style:none}
+.srcs li::before{content:"▸ ";color:var(--green-dim)}
+.weightline{display:flex;gap:6px;font-size:9px;letter-spacing:.14em;color:var(--txt-dim);margin-bottom:12px}
+.weightline b{color:var(--green);font-weight:400}
+.evid{border:1px solid var(--line);margin-bottom:12px}
+.evid .eh{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;background:#050f0d}
+.evid .eh .nm{font-size:10px;letter-spacing:.2em;color:var(--txt)}
+.evid .eh .sc{font-size:14px;color:var(--green);font-weight:700}
+.evid ul{padding:9px 13px}
+.evid li{list-style:none;font-size:11px;line-height:1.7;color:var(--txt)}
+.evid li::before{content:"+ ";color:var(--green-dim)}
+.draftpre{white-space:pre-wrap;border:1px solid var(--line);background:#050e0c;padding:16px;font-size:11.5px;line-height:1.7;color:var(--txt)}
+.draftnote{font-size:9px;color:var(--amber);letter-spacing:.12em;margin-top:9px}
+
+/* ---------- pipeline view ---------- */
+#view-pipe{flex-direction:column;overflow:hidden}
+.pipewrap{flex:1;overflow-y:auto;padding:0 26px 26px}
+table.pipe{width:100%;border-collapse:collapse;margin-top:14px}
+table.pipe th{font-size:9px;letter-spacing:.22em;color:var(--txt-dim);text-align:left;padding:10px 12px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2}
+table.pipe td{padding:9px 12px;border-bottom:1px solid #0a1c16;font-size:11px;cursor:pointer}
+table.pipe tr:hover td{background:rgba(54,255,156,.04)}
+td.cs{color:var(--green);letter-spacing:.12em;white-space:nowrap}
+td.biz{color:#fff;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.val{color:var(--green);text-align:right}
+.minibar{display:inline-block;width:70px;height:4px;background:#0a1f1a;vertical-align:middle;margin-left:8px;position:relative}
+.minibar i{position:absolute;inset:0;right:auto;background:var(--green)}
+.chip{font-size:8px;letter-spacing:.18em;padding:3px 9px;border:1px solid}
+.chip.DRAFTED{color:#ff9e3d;border-color:#7a4a16}
+.chip.REVIEW{color:#ffd23d;border-color:#7a6516}
+.chip.DOSSIER{color:var(--green);border-color:var(--green-dim)}
+.chip.WATCH{color:var(--dim);border-color:#1d3a2f}
+.chip.CONTACTED{color:#5ec8ff;border-color:#1d4f6e}
+.chip.RESPONDED{color:#ffd23d;border-color:#7a6516}
+.chip.RECRUITED{color:var(--green);border-color:var(--green-dim);background:rgba(54,255,156,.08)}
+.chip.PASS{color:var(--dim);border-color:#1d3a2f;text-decoration:line-through}
+.chip.NONE{color:var(--txt-dim);border-color:var(--line)}
+.opchip{cursor:pointer;user-select:none;transition:all .15s}
+.opchip:hover{border-color:var(--green-dim);box-shadow:0 0 8px rgba(54,255,156,.2)}
+td.ev{color:var(--txt-dim);font-size:10px;letter-spacing:.05em}
+.viewtitle{padding:20px 26px 0;font-size:10px;letter-spacing:.3em;color:var(--green);text-shadow:0 0 8px var(--green-glow)}
+.viewtitle small{display:block;margin-top:5px;color:var(--txt-dim);letter-spacing:.12em;font-size:9px}
+
+/* ---------- system view ---------- */
+#view-sys{flex-direction:column;overflow:hidden}
+.syswrap{flex:1;display:flex;overflow:hidden}
+.topo{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:30px;gap:0}
+.tier-row{display:flex;gap:34px;align-items:center}
+.node{border:1px solid var(--line);background:#050f0d;padding:13px 18px;min-width:172px;text-align:center;position:relative}
+.node .nm{font-size:10px;letter-spacing:.2em;color:var(--txt)}
+.node .ct{font-size:19px;color:var(--green);text-shadow:0 0 10px var(--green-glow);margin-top:5px;font-weight:600}
+.node .sub2{font-size:8px;color:var(--txt-dim);letter-spacing:.12em;margin-top:3px}
+.node.online{border-color:var(--green-dim)}
+.node.online::before{content:"●";color:var(--green);font-size:8px;position:absolute;top:7px;right:9px;animation:pulse 1.6s infinite}
+.conn{width:1px;height:26px;background:linear-gradient(180deg,var(--green-dim),var(--line));position:relative}
+.conn::after{content:"";position:absolute;left:-2px;width:5px;height:5px;background:var(--green);border-radius:50%;
+  animation:flow 1.8s linear infinite;box-shadow:0 0 6px var(--green-glow)}
+@keyframes flow{from{top:-4px;opacity:1}to{top:100%;opacity:.2}}
+.pills{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;justify-content:center}
+.pill{font-size:9px;letter-spacing:.18em;padding:6px 13px;border:1px solid var(--green-dim);color:var(--green)}
+.pill.q{border-color:var(--amber-dim);color:var(--amber)}
+#opslog{width:380px;border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column}
+#opsfeed{flex:1;overflow-y:auto;padding:8px 0;font-size:10px}
+.ops{padding:6px 16px;color:var(--txt-dim);border-bottom:1px solid #081712;animation:dropin .3s ease-out;letter-spacing:.04em}
+.ops .t{color:var(--green-dim);margin-right:9px}
+.ops.hi{color:var(--txt)}
+.statline{display:flex;border-top:1px solid var(--line)}
+.statline .st{flex:1;padding:11px 16px;border-right:1px solid var(--line)}
+.statline .st label{font-size:8px;letter-spacing:.18em;color:var(--txt-dim);display:block}
+.statline .st b{font-size:14px;color:var(--green);font-weight:600}
+
+/* ---------- boot ---------- */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;align-items:flex-start;justify-content:center;
+  flex-direction:column;gap:4px;font-size:12px;letter-spacing:.15em;color:var(--green);cursor:pointer;transition:opacity .4s;
+  padding-left:calc(50vw - 320px)}
+#boot.off{opacity:0;pointer-events:none}
+#boot .bl{opacity:0;animation:lnin .2s forwards}
+#boot .cursor{display:inline-block;width:8px;height:14px;background:var(--green);animation:pulse .8s infinite;vertical-align:text-bottom}
+@media(max-width:1100px){.sheetgrid{grid-template-columns:1fr}.sheetmain{border-right:none}}
+
+/* ================= MOBILE (≤900px) — additive only, desktop untouched ================= */
+@media(max-width:900px){
+  body{display:flex;flex-direction:column}
+
+  /* ----- header: brand+cycle row, then KPI chip strip; nav moves to a fixed bottom bar ----- */
+  header{height:auto;flex:none;flex-wrap:wrap;padding-top:env(safe-area-inset-top)}
+  .brand{min-width:0;flex:1;border-right:none;padding:10px 14px;overflow:hidden}
+  .brand h1{font-size:11px;letter-spacing:.12em;white-space:normal;line-height:1.45}
+  .brand small{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw}
+  .cycle{padding:8px 14px;margin-left:0}
+  .cycle .clock{font-size:14px}
+  .resweep{min-height:44px;padding:10px 12px;font-size:9px}
+  .kpis{order:5;flex:0 0 100%;width:100%;overflow-x:auto;overflow-y:hidden;border-top:1px solid var(--line);
+    -webkit-overflow-scrolling:touch}
+  .kpi{flex:0 0 auto;padding:9px 16px;white-space:nowrap}
+  .kpi label{font-size:8px;white-space:nowrap}
+  .kpi .v{font-size:16px}
+
+  /* ----- bottom tab bar (thumb zone) ----- */
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:500;display:flex;background:var(--bg2);
+    border-top:1px solid var(--line);border-right:none;padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1;border-right:1px solid var(--line);padding:15px 0;min-height:50px;font-size:10px;letter-spacing:.14em}
+  nav button:last-child{border-right:none}
+  nav button.on::after{bottom:auto;top:0}
+
+  /* main fills remaining height; reserve room for the bottom bar */
+  main{height:auto;flex:1;min-height:0;padding-bottom:calc(54px + env(safe-area-inset-bottom))}
+
+  /* ----- war map view: stacked, map shrinks to a short full-width panel ----- */
+  #view-map{flex-direction:column}
+  #mapwrap{flex:0 0 40vh;min-height:240px;width:100%}
+  #sidebar{width:100%;flex:1;min-height:0;border-left:none;border-top:1px solid var(--line)}
+  .tierfilter{gap:4px;right:10px;flex-wrap:wrap;justify-content:flex-end;max-width:62vw}
+  .tierfilter button{padding:12px 8px;font-size:8px;letter-spacing:.08em}
+  #hud-tl{top:14px;left:10px;max-width:46vw}
+  #hud-bl{left:10px}
+  #hud-br{right:10px}
+  .cardhead button{min-height:44px;padding:10px 16px;font-size:11px}
+  .openfull{min-height:50px}
+
+  /* ----- pipeline: table rows become tappable cards ----- */
+  .viewtitle{padding:14px 14px 0;letter-spacing:.22em}
+  .viewtitle small{line-height:1.6}
+  .pipewrap{padding:0 12px 20px}
+  table.pipe{margin-top:8px}
+  table.pipe thead{display:none}
+  table.pipe, table.pipe tbody{display:block;width:100%}
+  table.pipe tr{display:grid;grid-template-columns:1fr auto;gap:3px 12px;align-items:center;
+    padding:13px 4px;border-bottom:1px solid #0a1c16;min-height:44px}
+  table.pipe tr:hover td{background:none}
+  table.pipe tr:active{background:rgba(54,255,156,.05)}
+  table.pipe td{display:block;padding:0;border-bottom:none}
+  table.pipe td.cs{grid-column:1;grid-row:1;font-size:11px}
+  table.pipe td:nth-child(5){grid-column:2;grid-row:1;justify-self:end;font-size:12px}
+  table.pipe td.biz{grid-column:1 / -1;grid-row:2;max-width:none;white-space:normal;font-size:13px;line-height:1.45}
+  table.pipe td:nth-child(3){grid-column:1;grid-row:3;color:var(--txt-dim);font-size:10px;letter-spacing:.1em}
+  table.pipe td.val{grid-column:2;grid-row:3;text-align:right;font-size:10px}
+  table.pipe td:nth-child(6){grid-column:1;grid-row:4;margin-top:4px}
+  table.pipe td:nth-child(7){grid-column:2;grid-row:4;justify-self:end;margin-top:4px}
+  table.pipe td.ev{grid-column:1 / -1;grid-row:5;font-size:9px;margin-top:2px}
+  .chip{font-size:9px;padding:6px 10px}
+  .opchip{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:96px;text-align:center;padding:0 14px}
+  .minibar{width:52px}
+
+  /* ----- system view: stacked ----- */
+  .syswrap{flex-direction:column;overflow-y:auto}
+  .topo{flex:none;padding:22px 12px}
+  .tier-row{gap:12px;flex-wrap:wrap;justify-content:center}
+  .node{min-width:142px;padding:11px 12px}
+  #opslog{width:100%;flex:none;border-left:none;border-top:1px solid var(--line)}
+  #opsfeed{max-height:38vh}
+  .statline .st{padding:9px 10px}
+
+  /* ----- overlays become full-screen sheets w/ fixed thumb close ----- */
+  .overlay{padding:0;z-index:700}  /* above the fixed bottom tab bar */
+  .sheet{max-width:none !important;margin:0;min-height:100%;border-left:none;border-right:none;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  .sheethead{padding:13px 14px;flex-wrap:wrap;gap:10px;top:0}
+  .sheethead .l .cs{font-size:14px;letter-spacing:.18em}
+  .sheethead .l .co{font-size:10px}
+  .sheethead .r{width:100%;flex-wrap:wrap}
+  .ghostbtn{flex:1 1 auto;min-height:44px;padding:12px 10px;font-size:10px;letter-spacing:.12em}
+  /* the big fixed close — reuse existing ids, style only */
+  #d-close,#r-close,#x-close{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+    z-index:600;flex:none;background:var(--bg2);border-color:var(--green-dim);color:var(--green);
+    min-height:52px;font-size:12px;letter-spacing:.25em;box-shadow:0 -8px 30px rgba(0,0,0,.6),0 0 14px rgba(54,255,156,.12)}
+  .sheetmain{padding:18px 14px}
+  .sheetside{padding:18px 14px}
+  .sheet > div[style]{padding-left:14px !important;padding-right:14px !important}
+  .kv span{max-width:55vw}
+  .verbatim .row{flex-wrap:wrap}
+  .draftpre{font-size:12px}
+
+  /* ----- boot ----- */
+  #boot{padding-left:16px;padding-right:16px;font-size:10px;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<div id="boot"></div>
+
+<header>
+  <div class="brand"><h1>AGENT GRID <span style="color:var(--txt-dim)">//</span> SOUTH FLORIDA</h1><small id="brand-sub">AGENT RECRUITING · LIVE STATE LICENSE RECORDS</small></div>
+  <nav>
+    <button data-v="map" class="on">AGENT GRID</button>
+    <button data-v="pipe">PIPELINE</button>
+    <button data-v="sys">SYSTEM</button>
+  </nav>
+  <div class="kpis">
+    <div class="kpi"><label>NEW LICENSES · 60D</label><div class="v" id="k-table">0</div></div>
+    <div class="kpi"><label>PINS DROPPED</label><div class="v" id="k-pins">0</div></div>
+    <div class="kpi"><label>SECTORS SWEPT</label><div class="v" id="k-sectors">0</div></div>
+    <div class="kpi" id="kpi-unatt"><label>VERIFIED UNATTACHED</label><div class="v" id="k-unatt">0</div></div>
+    <div class="kpi"><label>PRIORITY TGTS</label><div class="v amber" id="k-pri">0</div></div>
+  </div>
+  <div class="cycle">
+    <label>CYCLE</label>
+    <div class="clock" id="clock">03:00</div>
+    <div style="display:flex;gap:6px">
+      <button class="resweep" id="resweep">RE-SWEEP ⟳</button>
+      <button class="resweep" id="exportcsv">EXPORT CSV ⇩</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- WAR MAP -->
+  <div class="view on" id="view-map">
+    <div id="mapwrap">
+      <svg id="mapsvg" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="maphud" id="hud-tl">GRID <b id="hud-region">TRI-COUNTY</b> · SRC <b>FL DFS BULK</b></div>
+      <div class="maphud" id="hud-bl">SWEEP <b>ACTIVE</b> · MODE <b>NIGHT OPS</b></div>
+      <div class="maphud" id="hud-br">GEN <b id="hud-gen">—</b></div>
+      <div class="tierfilter">
+        <button class="on t-P" data-t="PRIORITY">◉ 96+ PRIORITY</button>
+        <button class="on t-A" data-t="ACTIVE">◉ 94–95 ACTIVE</button>
+        <button class="on t-W" data-t="WATCH">◉ WATCH</button>
+      </div>
+      <div id="tooltip"></div>
+    </div>
+    <div id="sidebar">
+      <div class="sidehead"><span>DROP FEED</span><span class="live">● LIVE</span></div>
+      <div id="feed"></div>
+      <div id="card">
+        <div class="cardhead"><span class="cs" id="c-cs">TGT-01 TALON</span><button id="c-close">ESC ✕</button></div>
+        <div class="cardbody">
+          <div class="cardco" id="c-co"></div>
+          <div class="badges" id="c-badges"></div>
+          <div class="bigval" id="c-val">—<small>LICENSE CLASS · STATE RECORD</small></div>
+          <div class="scorebig"><span class="n" id="c-score">0</span><span class="d">/ 100 COMPOSITE</span></div>
+          <div class="kv"><label>PHONE</label><span class="phone" id="c-phone"></span></div>
+          <div class="kv"><label>SECTOR</label><span id="c-sector"></span></div>
+          <div class="kv"><label>LICENSE</label><span id="c-permit"></span></div>
+          <div class="kv"><label>ISSUED</label><span id="c-issued"></span></div>
+          <div class="whybox"><label>WHY CALL</label><p id="c-why"></p></div>
+          <button class="openfull" id="c-open">OPEN FULL DOSSIER →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="view" id="view-pipe">
+    <div class="viewtitle">PIPELINE — TARGET BOARD<small id="pipe-sub"></small></div>
+    <div class="pipewrap">
+      <table class="pipe">
+        <thead><tr><th>CALLSIGN</th><th>AGENT / AGENCY</th><th>SECTOR</th><th style="text-align:right">CLASS</th><th>SCORE</th><th>STATUS</th><th>OPERATOR</th><th>LAST EVENT</th></tr></thead>
+        <tbody id="pipebody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SYSTEM -->
+  <div class="view" id="view-sys">
+    <div class="viewtitle">MACHINE — LEAD FACTORY TOPOLOGY<small>AUTONOMOUS RECON → DOSSIER ASSEMBLY · DRAFTS ONLY, OPERATOR SENDS</small></div>
+    <div class="syswrap">
+      <div class="topo">
+        <div class="tier-row">
+          <div class="node online"><div class="nm">RECON · AGENTS</div><div class="ct" id="n-permits">0</div><div class="sub2">DFS INDIVIDUAL FILE · 60D</div></div>
+          <div class="node online"><div class="nm">RECON · AGENCIES</div><div class="ct" id="n-newbiz">0</div><div class="sub2">DFS BUSINESS FILE · 90D</div></div>
+        </div>
+        <div class="conn"></div>
+        <div class="node online"><div class="nm">PARSE + DEDUPE</div><div class="ct" id="n-parse">0</div><div class="sub2">NORMALIZED LEADS</div></div>
+        <div class="conn"></div>
+        <div class="node online"><div class="nm">ENRICH</div><div class="ct" id="n-enrich">0</div><div class="sub2">PHONES ON STATE RECORD</div></div>
+        <div class="conn"></div>
+        <div class="node online"><div class="nm">SCORE</div><div class="ct" id="n-score">0</div><div class="sub2">ICP 30 · NEED 25 · REACH 25 · FRESH 20</div></div>
+        <div class="conn"></div>
+        <div class="tier-row">
+          <div class="node online"><div class="nm">DOSSIER</div><div class="ct" id="n-dossier">0</div><div class="sub2">TARGET PACKETS</div></div>
+          <div class="node"><div class="nm">OUTREACH</div><div class="ct" id="n-outreach">0</div><div class="sub2">DRAFTS · AWAITING OPERATOR</div></div>
+        </div>
+        <div class="pills" id="pills"></div>
+      </div>
+      <div id="opslog">
+        <div class="sidehead"><span>OPS LOG</span><span class="live">● STREAM</span></div>
+        <div id="opsfeed"></div>
+        <div class="statline">
+          <div class="st"><label>EVENTS</label><b id="s-events">0</b></div>
+          <div class="st"><label>THROUGHPUT</label><b id="s-thru">0/m</b></div>
+          <div class="st"><label>UPTIME</label><b id="s-up">00:00</b></div>
+          <div class="st"><label>AGENTS</label><b>8/8</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- FULL DOSSIER -->
+<div class="overlay" id="ov-dossier">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="l"><div class="cs" id="d-cs"></div><div class="co" id="d-co"></div></div>
+      <div class="r">
+        <button class="ghostbtn" id="d-status">STATUS · —</button>
+        <button class="ghostbtn" id="d-report">FULL RESEARCH REPORT</button>
+        <button class="ghostbtn" id="d-draft">OUTREACH DRAFT</button>
+        <button class="ghostbtn" id="d-close">CLOSE ✕</button>
+      </div>
+    </div>
+    <div class="sheetgrid">
+      <div class="sheetmain">
+        <div class="sec"><h3>PROJECT INTEL <span class="tag">— VERBATIM RECORD</span></h3><div class="verbatim" id="d-verbatim"></div></div>
+        <div class="sec"><h3>WHY CALL NOW</h3><div class="whynow" id="d-why"></div></div>
+        <div class="sec"><h3>INTEL LOG <span class="tag">— LIVE</span></h3><div class="intel" id="d-intel"></div></div>
+      </div>
+      <div class="sheetside">
+        <div class="sec">
+          <h3>COMPOSITE SCORE</h3>
+          <div class="scorebig"><span class="n" id="d-score">0</span><span class="d">/ 100 · <span id="d-tier"></span></span></div>
+          <div id="d-subs"></div>
+        </div>
+        <div class="sec"><h3>LICENSE CLASS</h3>
+          <div class="bigval" id="d-val">—<small>LICENSE CLASS · STATE RECORD</small></div></div>
+        <div class="sec"><h3>CONTACT</h3><div id="d-contact"></div></div>
+        <div class="sec"><h3>POSITION</h3><svg class="minimap" id="d-minimap" width="100%" height="160"></svg></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESEARCH REPORT -->
+<div class="overlay" id="ov-report">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="l"><div class="cs" id="r-cs"></div><div class="co">FULL RESEARCH REPORT · AUTO-ASSEMBLED FROM PUBLIC RECORD</div></div>
+      <div class="r"><button class="ghostbtn solid" id="r-engage">ENGAGE → DRAFT</button><button class="ghostbtn" id="r-close">CLOSE ✕</button></div>
+    </div>
+    <div style="padding:22px 26px">
+      <div class="weightline">WEIGHTS <b>ICP 30</b> · <b>NEED 25</b> · <b>REACH 25</b> · <b>FRESH 20</b></div>
+      <div id="r-sections"></div>
+      <div class="sec"><h3>VERIFICATION TRAIL</h3><div class="vtrail" id="r-vtrail"></div></div>
+      <div class="sec"><h3>SOURCES</h3><ul class="srcs" id="r-srcs"></ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTREACH DRAFT -->
+<div class="overlay" id="ov-draft">
+  <div class="sheet" style="max-width:720px">
+    <div class="sheethead">
+      <div class="l"><div class="cs" id="x-cs"></div><div class="co">OUTREACH DRAFT · NOT SENT — OPERATOR REVIEWS &amp; FIRES</div></div>
+      <div class="r"><button class="ghostbtn solid" id="copydraft">COPY DRAFT ⧉</button><button class="ghostbtn" id="x-close">CLOSE ✕</button></div>
+    </div>
+    <div style="padding:22px 26px">
+      <div class="draftpre" id="x-body"></div>
+      <div class="draftnote">⚠ [MIKE / HIG] = YOUR SIGN-OFF BLOCK. NOTHING SENDS WITHOUT A HUMAN.</div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+const D = window.WARMAP;
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* ---------- operator status (persists in localStorage across re-sweeps;
+   keyed by NPN so a target keeps its status when the board re-bakes) ------ */
+const STATUS_KEY = 'higStatus';
+const STATUSES = ['', 'CONTACTED', 'RESPONDED', 'RECRUITED', 'PASS'];
+let opStatus = {};
+try { opStatus = JSON.parse(localStorage.getItem(STATUS_KEY)) || {}; } catch(e) {}
+const skey = t => t.npn || t.permit_no || t.company;
+const getStatus = t => opStatus[skey(t)] || '';
+function cycleStatus(t){
+  const next = STATUSES[(STATUSES.indexOf(getStatus(t)) + 1) % STATUSES.length];
+  if(next) opStatus[skey(t)] = next; else delete opStatus[skey(t)];
+  try { localStorage.setItem(STATUS_KEY, JSON.stringify(opStatus)); } catch(e) {}
+  return next;
+}
+const fmt$ = v => v>=1e6 ? '$'+(v/1e6).toFixed(1).replace('.0','')+'M' : v>=1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+v;
+const fmtBig = v => '$'+v.toLocaleString('en-US');
+
+/* ---------- projection ---------- */
+const B = D.bounds, W = 980, H = 760, PAD = 36;
+const cosLat = Math.cos((B.south+B.north)/2*Math.PI/180);
+const spanX = (B.east-B.west)*cosLat, spanY = B.north-B.south;
+const scale = Math.min((W-2*PAD)/spanX, (H-2*PAD)/spanY);
+const offX = (W - spanX*scale)/2, offY = (H - spanY*scale)/2;
+const px = lng => offX + (lng-B.west)*cosLat*scale;
+const py = lat => offY + (B.north-lat)*scale;
+
+/* ---------- build the map ---------- */
+const svg = $('#mapsvg');
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t,a={}) => { const e=document.createElementNS(NS,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
+
+// grid lines
+const gGrid = el('g'); svg.appendChild(gGrid);
+for(let x=0;x<=W;x+=49) gGrid.appendChild(el('line',{x1:x,y1:0,x2:x,y2:H,class:'gridline'}));
+for(let y=0;y<=H;y+=49) gGrid.appendChild(el('line',{x1:0,y1:y,x2:W,y2:y,class:'gridline'}));
+
+// sectors
+const gSec = el('g'); svg.appendChild(gSec);
+const secStats = {};
+D.sectors.forEach(s => {
+  secStats[s.zip] = s;
+  const pts = s.ring.map(p=>`${px(p[0]).toFixed(1)},${py(p[1]).toFixed(1)}`).join(' ');
+  const poly = el('polygon',{points:pts,class:'sector'+(s.permits>=30?' hot':'')});
+  poly.dataset.zip = s.zip;
+  gSec.appendChild(poly);
+  // centroid label for busy sectors
+  if(s.permits >= 35){
+    const cx = s.ring.reduce((a,p)=>a+px(p[0]),0)/s.ring.length;
+    const cy = s.ring.reduce((a,p)=>a+py(p[1]),0)/s.ring.length;
+    const t = el('text',{x:cx,y:cy,class:'sector-label','text-anchor':'middle'});
+    t.textContent = s.zip; gSec.appendChild(t);
+  }
+});
+
+// radar sweep
+const cx = W/2, cy = H/2;
+document.documentElement.style.setProperty('--cx', cx+'px');
+document.documentElement.style.setProperty('--cy', cy+'px');
+const defs = el('defs');
+defs.innerHTML = `<linearGradient id="swp" x1="0" y1="0" x2="1" y2="0">
+  <stop offset="0" stop-color="rgba(54,255,156,0)"/><stop offset="1" stop-color="rgba(54,255,156,.16)"/></linearGradient>`;
+svg.appendChild(defs);
+const R = Math.hypot(W,H)/2 + 40;
+const wedge = el('path',{id:'sweepwedge', d:`M ${cx} ${cy} L ${cx+R} ${cy} A ${R} ${R} 0 0 0 ${cx+R*Math.cos(-0.62)} ${cy+R*Math.sin(-0.62)} Z`, fill:'url(#swp)'});
+svg.appendChild(wedge);
+svg.appendChild(el('circle',{cx,cy,r:R*.32,fill:'none',stroke:'#0d2c22','stroke-width':1}));
+svg.appendChild(el('circle',{cx,cy,r:R*.55,fill:'none',stroke:'#0d2c22','stroke-width':1}));
+
+// pins
+const gPins = el('g'); svg.appendChild(gPins);
+const pinAngles = [];
+D.targets.forEach((t,i) => {
+  if(t.lat == null){
+    // newbiz: place at its sector centroid if we have it, else skip pin
+    const s = secStats[t.sector];
+    if(!s) return;
+    t._x = s.ring.reduce((a,p)=>a+px(p[0]),0)/s.ring.length;
+    t._y = s.ring.reduce((a,p)=>a+py(p[1]),0)/s.ring.length;
+  } else { t._x = px(t.lng); t._y = py(t.lat); }
+  const g = el('g',{class:`pin ${t.tier}`,transform:`translate(${t._x.toFixed(1)},${t._y.toFixed(1)})`});
+  g.dataset.i = i;
+  g.appendChild(el('circle',{class:'ring',r:5}));
+  g.appendChild(el('circle',{class:'core',r:t.tier==='PRIORITY'?5.5:4.5}));
+  if(t.tier==='PRIORITY'){
+    const lb = el('text',{x:9,y:3}); lb.textContent = t.id; g.appendChild(lb);
+  }
+  gPins.appendChild(g);
+  pinAngles.push({g, ang:(Math.atan2(t._y-cy, t._x-cx)*180/Math.PI+360)%360});
+});
+
+// sweep-synced blips
+let sweepStart = performance.now();
+(function blipLoop(now){
+  const ang = (((now-sweepStart)/7500)%1)*360;
+  pinAngles.forEach(p=>{
+    let d = Math.abs(ang-p.ang); d = Math.min(d,360-d);
+    if(d < 3 && !p.g.classList.contains('blip')){
+      p.g.classList.add('blip');
+      setTimeout(()=>p.g.classList.remove('blip'),1100);
+    }
+  });
+  requestAnimationFrame(blipLoop);
+})(performance.now());
+
+/* ---------- tooltip on sectors ---------- */
+const tip = $('#tooltip');
+gSec.addEventListener('mousemove', e=>{
+  const z = e.target.dataset && e.target.dataset.zip;
+  if(!z){ tip.style.display='none'; return; }
+  const s = secStats[z];
+  tip.innerHTML = `<b>SECTOR ${z}</b><br>${s.permits} new licenses · 60d`;
+  tip.style.display='block';
+  const r = $('#mapwrap').getBoundingClientRect();
+  tip.style.left = (e.clientX-r.left+14)+'px';
+  tip.style.top = (e.clientY-r.top+10)+'px';
+});
+gSec.addEventListener('mouseleave', ()=> tip.style.display='none');
+
+/* ---------- KPIs (count-up) ---------- */
+function countUp(elx, target, fmt, ms=1400){
+  const t0 = performance.now();
+  (function tick(now){
+    const k = Math.min(1,(now-t0)/ms), e = 1-Math.pow(1-k,3);
+    elx.textContent = fmt(Math.round(target*e));
+    if(k<1) requestAnimationFrame(tick);
+  })(t0);
+}
+function fireKpis(){
+  countUp($('#k-table'), D.kpis.new_licenses, v=>v.toLocaleString('en-US'), 1800);
+  countUp($('#k-pins'), D.kpis.pins, v=>v);
+  countUp($('#k-sectors'), D.kpis.sectors_swept, v=>v);
+  if(D.kpis.unattached != null)
+    countUp($('#k-unatt'), D.kpis.unattached, v=>v.toLocaleString('en-US'), 1800);
+  else $('#kpi-unatt').style.display = 'none';   // heuristic mode — no appt file
+  countUp($('#k-pri'), D.kpis.priority_count, v=>v);
+}
+$('#hud-gen').textContent = (D.generated_at||'').slice(0,16).replace('T',' ')+'Z';
+$('#hud-region').textContent = D.kpis.region_mode || D.county.toUpperCase();
+
+/* ---------- EXPORT CSV — client-side, includes live operator statuses ----- */
+$('#exportcsv').onclick = ()=>{
+  const cols = ['callsign','tier','score','name','class','issued','days_ago','phone',
+    'email','city','county','zip','license_no','npn','appointments','carriers',
+    'unattached','new_this_sweep','operator_status','why_call'];
+  const esc = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const lines = [cols.join(',')].concat(D.targets.map(t => [
+    `${t.id} ${t.callsign}`, t.tier, t.score, t.company, t.klass||'', t.issued||'',
+    t.days_ago ?? '', t.phone||'', t.email||'', t.city||'', t.county||'', t.zip||'',
+    t.permit_no||'', t.npn||'', t.appt_count ?? '', (t.appt_carriers||[]).join(' · '),
+    t.unattached===true?'YES':t.unattached===false?'no':'', t.is_new?'NEW':'',
+    getStatus(t), t.why_call||''
+  ].map(esc).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
+  a.download = 'hig_call_sheet.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+/* ---------- drop feed ---------- */
+const feedEl = $('#feed');
+let feedIdx = 0, eventsCount = 0;
+function pushDrop(initial){
+  const f = D.feed[feedIdx % D.feed.length]; feedIdx++;
+  const d = document.createElement('div'); d.className='drop';
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0'), mm = String(now.getMinutes()).padStart(2,'0'),
+        ss = String(now.getSeconds()).padStart(2,'0');
+  d.innerHTML = `<div class="t1"><b>${f.company}</b><span>${f.label||'—'}</span></div>
+    <div class="t2"><span>SECTOR ${f.sector} · ${f.kind.toUpperCase()}</span><span>${hh}:${mm}:${ss}</span></div>`;
+  feedEl.prepend(d);
+  while(feedEl.children.length > 28) feedEl.lastChild.remove();
+  eventsCount++;
+}
+for(let i=0;i<14;i++) pushDrop(true);
+setInterval(pushDrop, 4200);
+
+/* ---------- views ---------- */
+$$('nav button').forEach(b => b.onclick = ()=>{
+  $$('nav button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('on'));
+  $('#view-'+b.dataset.v).classList.add('on');
+});
+
+/* ---------- tier filter ---------- */
+$$('.tierfilter button').forEach(b=> b.onclick = ()=>{
+  b.classList.toggle('on');
+  const show = new Set($$('.tierfilter button.on').map(x=>x.dataset.t));
+  $$('.pin').forEach(p=>{
+    const t = D.targets[+p.dataset.i];
+    p.style.display = show.has(t.tier) ? '' : 'none';
+  });
+});
+
+/* ---------- target card ---------- */
+let curT = null;
+gPins.addEventListener('click', e=>{
+  const g = e.target.closest('.pin'); if(!g) return;
+  $$('.pin.sel').forEach(p=>p.classList.remove('sel')); g.classList.add('sel');
+  openCard(D.targets[+g.dataset.i]);
+});
+function openCard(t){
+  curT = t;
+  $('#c-cs').textContent = `${t.id} ${t.callsign}`;
+  $('#c-co').textContent = t.company;
+  const badges = [`<span class="badge ${t.tier==='PRIORITY'?'g':t.tier==='ACTIVE'?'a':''}">${t.tier}</span>`,
+    `<span class="badge">${(t.klass||'—').toUpperCase()}</span>`,
+    t.phone?`<span class="badge g">LINE VERIFIED</span>`:`<span class="badge r">TRACE QUEUED</span>`];
+  if(t.other_licenses>0) badges.push(`<span class="badge a">${t.other_licenses+1} LICENSE CLASSES</span>`);
+  if(t.source_kind==='newbiz') badges.push(`<span class="badge a">NEW ENTITY</span>`);
+  if(t.appt_count===0) badges.push(`<span class="badge g">0 APPTS · VERIFIED UNATTACHED</span>`);
+  else if(t.appt_count>0) badges.push(`<span class="badge a">${t.appt_count} CARRIER APPT${t.appt_count>1?'S':''}</span>`);
+  if(t.is_new) badges.push(`<span class="badge new">NEW THIS SWEEP</span>`);
+  const st = getStatus(t);
+  if(st) badges.push(`<span class="badge ${st==='RECRUITED'?'g':st==='PASS'?'':'a'}">OP · ${st}</span>`);
+  $('#c-badges').innerHTML = badges.join('');
+  $('#c-val').innerHTML = (t.value_label||'—') +
+    `<small>${t.source_kind==='newbiz'?'NEW AGENCY LICENSE · STATE RECORD':'LICENSE CLASS · STATE RECORD'}</small>`;
+  $('#c-score').textContent = t.score;
+  $('#c-phone').textContent = t.phone || 'NPN LOOKUP QUEUED';
+  $('#c-phone').style.color = t.phone ? '' : 'var(--amber)';
+  $('#c-sector').textContent = t.sector;
+  $('#c-permit').textContent = t.permit_no || '—';
+  $('#c-issued').textContent = t.issued ? `${t.issued} · ${t.days_ago}d ago` : '—';
+  $('#c-why').textContent = t.why_call;
+  $('#card').classList.add('on');
+}
+$('#c-close').onclick = ()=>{ $('#card').classList.remove('on'); $$('.pin.sel').forEach(p=>p.classList.remove('sel')); };
+$('#c-open').onclick = ()=> openDossier(curT);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){
+  $$('.overlay.on').forEach(o=>o.classList.remove('on'));
+  $('#card').classList.remove('on');
+}});
+
+/* ---------- full dossier ---------- */
+const SUBNAMES = {icp:'ICP FIT',pain:'RECRUIT NEED',reach:'REACHABILITY',fresh:'FRESHNESS'};
+function openDossier(t){
+  curT = t;
+  $('#d-cs').textContent = `${t.id} ${t.callsign}`;
+  $('#d-co').textContent = `${t.company} · SECTOR ${t.sector} · ${t.source.toUpperCase()}`;
+  const rows = [
+    ['LICENSE', t.permit_no || '—'],
+    ['NPN', t.npn || '—'],
+    ['CLASS', `${t.klass || '—'} · ${t.work || ''}`],
+    ['STATUS', t.status || '—'],
+    ['ISSUED', t.issued ? `${t.issued} (${t.days_ago} days ago)` : '—'],
+    ['BUSINESS ADDR', t.address || '—'],
+    ['COUNTY', t.county || '—'],
+  ];
+  if(t.other_licenses>0) rows.push(['ALSO HOLDS', `${t.other_licenses} more license class${t.other_licenses>1?'es':''}`]);
+  rows.push(['APPOINTMENTS', t.appt_count==null ? 'state appointment file pending'
+    : t.appt_count===0 ? '0 ACTIVE — VERIFIED UNATTACHED'
+    : `${t.appt_count} active · ${(t.appt_carriers||[]).join(' · ')||'carriers on file'}`]);
+  $('#d-verbatim').innerHTML = rows.map(r=>`<div class="row"><label>${r[0]}</label><div>${r[1]}</div></div>`).join('');
+  paintStatusBtn(t);
+  $('#d-why').textContent = t.why_call;
+  // intel log types in
+  const il = $('#d-intel'); il.innerHTML='';
+  t.intel_log.forEach((l,i)=>{
+    const d = document.createElement('div'); d.className='ln'; d.style.animationDelay = (i*.28)+'s';
+    d.innerHTML = `<span class="t">${l.t}</span><span>${l.msg}</span>`;
+    il.appendChild(d);
+  });
+  $('#d-score').textContent = t.score;
+  $('#d-tier').textContent = t.tier;
+  const subs = $('#d-subs'); subs.innerHTML='';
+  Object.entries(t.subscores).forEach(([k,v])=>{
+    const d = document.createElement('div'); d.className='sub';
+    d.innerHTML = `<div class="lbl"><span>${SUBNAMES[k]} · ${Math.round(D.weights[k])}%</span><b>${v}</b></div>
+      <div class="bar${v<60?' amber':''}"><i></i></div>`;
+    subs.appendChild(d);
+    requestAnimationFrame(()=>requestAnimationFrame(()=> d.querySelector('i').style.width = v+'%'));
+  });
+  $('#d-val').innerHTML = (t.value_label||'—') +
+    `<small>${t.source_kind==='newbiz'?'NEW AGENCY LICENSE · STATE RECORD':'LICENSE CLASS · STATE RECORD'}</small>`;
+  const c = [];
+  c.push(`<div class="kv"><label>PHONE</label><span class="phone">${t.phone||'NPN LOOKUP QUEUED'}</span></div>`);
+  if(t.email) c.push(`<div class="kv"><label>EMAIL</label><span>${t.email}</span></div>`);
+  if(t.contact_name) c.push(`<div class="kv"><label>NAME ON FILE</label><span>${t.contact_name}</span></div>`);
+  if(t.officer) c.push(`<div class="kv"><label>OFFICER</label><span>${t.officer}</span></div>`);
+  if(t.phone_source) c.push(`<div class="kv"><label>VERIFIED VIA</label><span>${t.phone_source}</span></div>`);
+  if(t.npn) c.push(`<div class="kv"><label>NPN</label><span>${t.npn}</span></div>`);
+  $('#d-contact').innerHTML = c.join('');
+  drawMinimap(t);
+  $('#ov-dossier').classList.add('on');
+}
+function drawMinimap(t){
+  const m = $('#d-minimap'); m.innerHTML='';
+  const mw = 316, mh = 160; m.setAttribute('viewBox',`0 0 ${mw} ${mh}`);
+  const sc = Math.min(mw/W, mh/H)*0.96;
+  const ox = (mw - W*sc)/2, oy = (mh - H*sc)/2;
+  D.sectors.forEach(s=>{
+    const pts = s.ring.map(p=>`${(px(p[0])*sc+ox).toFixed(1)},${(py(p[1])*sc+oy).toFixed(1)}`).join(' ');
+    const isHome = s.zip === t.sector;
+    m.appendChild(el('polygon',{points:pts, fill: isHome?'rgba(54,255,156,.22)':'rgba(20,80,60,.10)',
+      stroke: isHome?'var(--green)':'#13452f','stroke-width':isHome?1.2:0.6}));
+  });
+  if(t._x != null){
+    m.appendChild(el('circle',{cx:t._x*sc+ox, cy:t._y*sc+oy, r:4, fill:'var(--green)'}));
+    const ring = el('circle',{cx:t._x*sc+ox, cy:t._y*sc+oy, r:8, fill:'none', stroke:'var(--green)','stroke-width':1});
+    ring.innerHTML = '<animate attributeName="r" values="5;14" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".8;0" dur="1.6s" repeatCount="indefinite"/>';
+    m.appendChild(ring);
+  }
+}
+$('#d-close').onclick = ()=> $('#ov-dossier').classList.remove('on');
+$('#d-report').onclick = ()=> openReport(curT);
+$('#d-draft').onclick = ()=> openDraft(curT);
+function paintStatusBtn(t){
+  const st = getStatus(t);
+  const b = $('#d-status');
+  b.textContent = `STATUS · ${st || '—'}`;
+  b.style.color = st==='RECRUITED' ? 'var(--green)' : st==='PASS' ? 'var(--dim)' : st ? '#5ec8ff' : '';
+}
+$('#d-status').onclick = ()=>{ if(!curT) return; cycleStatus(curT); paintStatusBtn(curT); renderPipe(); };
+
+/* ---------- research report ---------- */
+function evidence(t){
+  const e = {icp:[],pain:[],reach:[],fresh:[]};
+  const attach = t.appt_count===0
+    ? `ZERO active carrier appointments on the state file — verified unattached`
+    : t.appt_count>0
+    ? `${t.appt_count} active appointment${t.appt_count>1?'s':''} on file${(t.appt_carriers||[]).length?` — ${t.appt_carriers.join(', ')}`:''}`
+    : t.freemail ? `freemail domain — likely unattached, no agency email on file` : null;
+  if(t.source_kind==='newbiz'){
+    e.icp.push(`brand-new agency license (2105) on the FL DFS business file`);
+    e.icp.push(`an agency owner recruit brings their whole future downline`);
+    if(attach) e.pain.push(attach);
+    e.pain.push(`first-six-months window — carrier contracts not assembled yet`);
+    e.fresh.push(`agency licensed ${t.issued} (${t.days_ago} days ago)`);
+  } else {
+    e.icp.push(`${t.klass||''} — ${(t.work||'').toLowerCase()} classification on record`);
+    if(t.other_licenses>0) e.icp.push(`${t.other_licenses+1} license classes held — committed to the career`);
+    if(attach) e.pain.push(attach);
+    e.pain.push(`first-90-day window: no carrier contracts, no leads, months from first commission`);
+    e.fresh.push(`license issued ${t.issued} (${t.days_ago} days ago)`);
+  }
+  if(t.is_new) e.fresh.push(`NEW this sweep — was not on the previous run of the grid`);
+  if(t.phone){ e.reach.push(`phone on the state license record · ${t.phone}`); }
+  else e.reach.push(`no phone on record — NPN lookup queued (nipr.com)`);
+  if(t.email) e.reach.push(`email on state record: ${t.email}`);
+  if(t.county==='Broward') e.reach.push(`Broward-based — in-person meeting from the Fort Lauderdale office`);
+  if(t.days_ago<=14) e.fresh.push(`inside the appointment window — carrier contracts likely unsigned`);
+  return e;
+}
+function openReport(t){
+  $('#ov-dossier').classList.remove('on');
+  $('#r-cs').textContent = `${t.id} ${t.callsign} — ${t.company}`;
+  const ev = evidence(t);
+  $('#r-sections').innerHTML = Object.entries(t.subscores).map(([k,v])=>`
+    <div class="evid"><div class="eh"><span class="nm">${SUBNAMES[k]} · WEIGHT ${Math.round(D.weights[k])}%</span><span class="sc">${v}<span style="font-size:9px;color:var(--txt-dim)"> /100</span></span></div>
+    <ul>${ev[k].map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+  $('#r-vtrail').innerHTML = t.verification.map(v=>
+    `<div class="ln"><span class="s-${v.s==='ok'?'ok':'pend'}">[${v.s}]</span><span>${v.msg}</span></div>`).join('');
+  $('#r-srcs').innerHTML = D.system.sources.map(s=>`<li>${s}</li>`).join('');
+  $('#ov-report').classList.add('on');
+}
+$('#r-close').onclick = ()=> $('#ov-report').classList.remove('on');
+$('#r-engage').onclick = ()=> { $('#ov-report').classList.remove('on'); openDraft(curT); };
+
+/* ---------- outreach draft ---------- */
+function openDraft(t){
+  $('#ov-dossier').classList.remove('on');
+  $('#x-cs').textContent = `${t.id} ${t.callsign} — ${t.company}`;
+  $('#x-body').textContent = t.outreach_draft;
+  $('#ov-draft').classList.add('on');
+}
+$('#x-close').onclick = ()=> $('#ov-draft').classList.remove('on');
+
+/* ---------- copy draft (additive; safe when clipboard API is unavailable) ---------- */
+let copyTimer = null;
+$('#copydraft').onclick = ()=>{
+  const b = $('#copydraft');
+  const txt = $('#x-body').textContent || '';
+  const confirm = ()=>{
+    b.textContent = 'COPIED ✓';
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(()=>{ b.textContent = 'COPY DRAFT ⧉'; }, 1500);
+  };
+  try {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(confirm, confirm);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      ta.remove(); confirm();
+    }
+  } catch(e) { confirm(); }
+};
+
+/* ---------- pipeline table ---------- */
+const subBits = [`${D.targets.length} TARGETS`,
+  `${D.kpis.new_licenses.toLocaleString('en-US')} NEW LICENSES IN 60D`];
+if(D.kpis.unattached != null) subBits.push(`${D.kpis.unattached.toLocaleString('en-US')} VERIFIED UNATTACHED IN POOL`);
+if(D.kpis.new_since_last) subBits.push(`${D.kpis.new_since_last} NEW SINCE LAST SWEEP`);
+subBits.push(`AVG SCORE ${D.kpis.avg_score}`);
+$('#pipe-sub').textContent = subBits.join(' · ');
+function renderPipe(){
+  $('#pipebody').innerHTML = D.targets.map((t,i)=>{
+    const st = getStatus(t);
+    return `
+  <tr data-i="${i}">
+    <td class="cs">${t.id} ${t.callsign}${t.is_new?' <span class="badge new">NEW</span>':''}</td>
+    <td class="biz">${t.company}</td>
+    <td>${t.sector}</td>
+    <td class="val">${t.value_label||'—'}</td>
+    <td>${t.score}<span class="minibar"><i style="width:${t.score}%"></i></span></td>
+    <td><span class="chip ${t.pipeline_status}">${t.pipeline_status}</span></td>
+    <td><span class="chip opchip ${st||'NONE'}" data-op="${i}" title="click to cycle">${st||'— SET'}</span></td>
+    <td class="ev">${t.last_event}</td>
+  </tr>`;}).join('');
+}
+renderPipe();
+$('#pipebody').onclick = e=>{
+  const op = e.target.closest('.opchip');
+  if(op){                       // cycle operator status in place, don't open
+    cycleStatus(D.targets[+op.dataset.op]);
+    renderPipe();
+    return;
+  }
+  const tr = e.target.closest('tr'); if(tr) openDossier(D.targets[+tr.dataset.i]);
+};
+
+/* ---------- system view ---------- */
+const S = D.system;
+$('#n-permits').textContent = S.recon_permits.toLocaleString();
+$('#n-newbiz').textContent = S.recon_newbiz;
+$('#n-parse').textContent = S.parse.toLocaleString();
+$('#n-enrich').textContent = S.enrich.toLocaleString();
+$('#n-score').textContent = S.score.toLocaleString();
+$('#n-dossier').textContent = S.dossier;
+$('#n-outreach').textContent = S.outreach;
+$('#pills').innerHTML = `
+  <span class="pill">ST-1 DFS AGENT SWEEP · ONLINE</span>
+  <span class="pill">ST-2 DFS AGENCY SWEEP · ONLINE</span>
+  <span class="pill q">NPN LOOKUP · ${S.trace_queued} QUEUED</span>
+  <span class="pill">DRAFT ENGINE · ${S.outreach} STAGED</span>`;
+
+const OPS = [
+  ()=>`sector ${D.targets[Math.floor(Math.random()*D.targets.length)].sector} re-swept · unchanged`,
+  ()=>`license file delta check · 0 new rows`,
+  ()=>{const t=D.targets[Math.floor(Math.random()*D.targets.length)];return `score held on re-run · ${t.id}`},
+  ()=>`DFS bulk file watch · next refresh 06:00 ET`,
+  ()=>{const t=D.targets[Math.floor(Math.random()*D.targets.length)];return `dossier refreshed · ${t.id} ${t.callsign}`},
+  ()=>`license feed heartbeat · ok`,
+  ()=>{const f=D.feed[Math.floor(Math.random()*D.feed.length)];return `comparable logged · sector ${f.sector}`},
+  ()=>`dedupe pass · 0 new collisions`,
+];
+const opsFeed = $('#opsfeed');
+let opsN = 0; const t0 = Date.now();
+function pushOps(){
+  const d = document.createElement('div'); d.className = 'ops'+(Math.random()<.3?' hi':'');
+  const now = new Date();
+  d.innerHTML = `<span class="t">${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}</span>${OPS[Math.floor(Math.random()*OPS.length)]()}`;
+  opsFeed.prepend(d);
+  while(opsFeed.children.length>40) opsFeed.lastChild.remove();
+  opsN++;
+  $('#s-events').textContent = opsN + eventsCount;
+  $('#s-thru').textContent = Math.max(1,Math.round((opsN+eventsCount)/Math.max(1,(Date.now()-t0)/60000)))+'/m';
+}
+for(let i=0;i<10;i++) pushOps();
+setInterval(pushOps, 3500);
+setInterval(()=>{
+  const s = Math.floor((Date.now()-t0)/1000);
+  $('#s-up').textContent = String(Math.floor(s/3600)).padStart(2,'0')+':'+String(Math.floor(s/60)%60).padStart(2,'0');
+},1000);
+
+/* ---------- cycle clock + re-sweep ---------- */
+let cyc = 180;
+setInterval(()=>{
+  cyc--; if(cyc<0){ cyc = 180; resweep(); }
+  $('#clock').textContent = String(Math.floor(cyc/60)).padStart(2,'0')+':'+String(cyc%60).padStart(2,'0');
+},1000);
+function resweep(){
+  sweepStart = performance.now();
+  fireKpis();
+  for(let i=0;i<3;i++) setTimeout(pushDrop, i*350);
+}
+$('#resweep').onclick = ()=>{ cyc = 180; resweep(); };
+
+/* ---------- boot sequence ---------- */
+const boot = $('#boot');
+const lines = [
+  'AGENT GRID v2 · SOUTH FLORIDA',
+  'authenticating against public record systems … ok',
+  `DFS individual file … ${S.recon_permits.toLocaleString()} new licenses (60d · tri-county)`,
+  `DFS business file … ${S.recon_newbiz} new agency licenses (90d)`,
+  D.kpis.unattached != null
+    ? `appointment cross-check … ${D.kpis.unattached.toLocaleString()} verified unattached`
+    : 'appointment cross-check … pending (heuristic mode)',
+  `contact extraction … ${S.enrich.toLocaleString()} phones on state record`,
+  `recruit-fit scoring … ${S.score.toLocaleString()} licensees → ${S.dossier} targets`,
+  'dropping pins …',
+];
+lines.forEach((l,i)=>{
+  const d = document.createElement('div'); d.className='bl'; d.style.animationDelay=(i*.16)+'s';
+  d.textContent = '▸ '+l; boot.appendChild(d);
+});
+const cur = document.createElement('div'); cur.innerHTML = '<span class="cursor"></span>';
+cur.className='bl'; cur.style.animationDelay=(lines.length*.16)+'s'; boot.appendChild(cur);
+function dismissBoot(){ boot.classList.add('off'); fireKpis(); }
+setTimeout(dismissBoot, lines.length*160+900);
+boot.onclick = dismissBoot;
+
+/* ---------- mobile: pipeline is the primary surface (additive; desktop untouched) ---------- */
+if(window.matchMedia && window.matchMedia('(max-width:900px)').matches){
+  const pipeBtn = $$('nav button').find(b => b.dataset.v === 'pipe');
+  if(pipeBtn) pipeBtn.click();
+}
+</script>
+</body>
+</html>
